@@ -12,9 +12,7 @@ try:
     delimiter = ',' if ',' in first_line else ';'
 
     df = pd.read_csv(csv_path, delimiter=delimiter)
-    st.success("Arquivo carregado com sucesso!")
 except Exception as e:
-    st.error(f"Erro ao carregar o arquivo: {e}")
     st.stop()
 
 
