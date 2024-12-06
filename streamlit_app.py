@@ -58,3 +58,16 @@ ax.set_ylabel("Quantidade de Registros", fontsize=12)
 ax.legend(title="Década")
 ax.set_xticklabels(combined_data.index, rotation=0)  # Define a rotação do eixo X
 st.pyplot(fig)
+
+
+import seaborn as sns
+
+fig, ax = plt.subplots(figsize=(12, 8))
+sns.heatmap(combined_data, annot=True, fmt="d", cmap="coolwarm", ax=ax)
+ax.set_title("Distribuição de Gêneros por Década (Heatmap)", fontsize=16)
+ax.set_xlabel("Décadas", fontsize=12)
+ax.set_ylabel("Gêneros", fontsize=12)
+
+st.pyplot(fig)
+
+
