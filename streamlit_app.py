@@ -13,7 +13,9 @@ import re
 
 st.title("Análise de Impacto da Internet nos Gêneros Musicais")
 
-parquet_path = r"C:\Users\Igor\Downloads\archive\tcc_ceds_music.parquet"
+# Caminho absoluto baseado no local do script
+base_dir = os.path.dirname(os.path.abspath(__file__))
+parquet_path = os.path.join(base_dir, "dataset/parquet/tcc_ceds_music.parquet")
 
 st.write("Carregando dados...")
 try:
