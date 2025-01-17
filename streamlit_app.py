@@ -110,20 +110,39 @@ elif menu == "Distribuição por Décadas":
     st.markdown("""
     Os gráficos mostram a quantidade de registros por gênero em cada década, ajudando a identificar as tendências musicais.
     """)
-    
+
     st.title("Distribuição por Décadas")
+    
+    # Seleção do intervalo de anos
     min_year, max_year = st.slider(
         "Selecione o intervalo de anos para análise:",
         int(df['year'].min()), int(df['year'].max()),
         (int(df['year'].min()), int(df['year'].max()))
     )
+    
+    # Filtro por gênero
+    available_genres = sorted(df['genre'].dropna().unique())
+    selected_genres = st.multiselect(
+        "Selecione os gêneros para análise:",
+        options=available_genres,
+        default=available_genres  # Por padrão, inclui todos os gêneros
+    )
+    
+    # Aplicar filtros ao dataframe
     filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)]
+    if selected_genres:
+        filtered_df = filtered_df[filtered_df['genre'].isin(selected_genres)]
+    
+    # Agrupamento por década e gênero
     filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
     genre_distribution = filtered_df.groupby(['decade', 'genre']).size().unstack(fill_value=0)
+    
+    # Criação do gráfico
     fig, ax = plt.subplots(figsize=(12, 6))
     sns.heatmap(genre_distribution, cmap="coolwarm", annot=False, fmt="d", ax=ax)
     ax.set_title(f"Distribuição de Gêneros por Década ({min_year}-{max_year})")
     st.pyplot(fig)
+
 elif menu == "Evolução Acústica":
     st.markdown("""
     A linha do tempo mostra a variação de atributos como **dançabilidade**, **acústica** e **energia** por década. 
