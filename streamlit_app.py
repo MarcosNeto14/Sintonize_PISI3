@@ -43,7 +43,10 @@ df['release_date'] = df['release_date'].astype(str).str.replace(",", "").str.spl
 df['year'] = pd.to_numeric(df['release_date'], errors='coerce')
 df['decade'] = (df['year'] // 10 * 10).astype('Int64')
 
-attributes = ['danceability', 'acousticness', 'energy']
+attributes = ['danceability', 'acousticness', 'energy', 'violence', 'world/life', 'night/time', 
+    'shake the audience', 'family/gospel', 'romantic', 'communication', 'obscene', 
+    'music', 'movement/places', 'light/visual perceptions', 'family/spiritual', 
+    'like/girls', 'sadness', 'feelings', 'loudness', 'instrumentalness', 'valence']
 df[attributes] = df[attributes].apply(pd.to_numeric, errors='coerce')
 
 if "current_menu" not in st.session_state:
@@ -167,61 +170,61 @@ Isso ajuda a observar como as características musicais evoluíram ao longo dos 
     plt.legend(title="Atributos")
     st.pyplot(plt)
 elif menu == "Palavras-chave e Contexto Histórico":
-    st.markdown("""
-    ### Chegada à Lua
-    Gráfico mostrando a frequência de palavras-chave relacionadas à missão Apollo nas letras, destacando o impacto cultural do evento.
-    """)
+  st.markdown("""
+  ### Chegada à Lua
+  Gráfico mostrando a frequência de palavras-chave relacionadas à missão Apollo nas letras, destacando o impacto cultural do evento.
+  """)
 
-    min_year_moon, max_year_moon = st.slider(
-        "Selecione o intervalo de anos para análise (Chegada à Lua):",
-        1950, 2019, (1950, 2019)
-    )
-    filtered_df_moon = df[(df['year'] >= min_year_moon) & (df['year'] <= max_year_moon)]
-    keyword_counts_moon = {year: 0 for year in range(min_year_moon, max_year_moon + 1)}
+  min_year_moon, max_year_moon = st.slider(
+      "Selecione o intervalo de anos para análise (Chegada à Lua):",
+      1950, 2019, (1950, 2019)
+  )
+  filtered_df_moon = df[(df['year'] >= min_year_moon) & (df['year'] <= max_year_moon)]
+  keyword_counts_moon = {year: 0 for year in range(min_year_moon, max_year_moon + 1)}
 
-    for year in range(min_year_moon, max_year_moon + 1):
-        year_df = filtered_df_moon[filtered_df_moon['year'] == year]
-        for _, row in year_df.iterrows():
-            lyrics = str(row['lyrics'])
-            keyword_counts_moon[year] += count_keywords(lyrics, keywords["moon_landing"])
+  for year in range(min_year_moon, max_year_moon + 1):
+      year_df = filtered_df_moon[filtered_df_moon['year'] == year]
+      for _, row in year_df.iterrows():
+          lyrics = str(row['lyrics'])
+          keyword_counts_moon[year] += count_keywords(lyrics, keywords["moon_landing"])
 
-    keyword_df_moon = pd.DataFrame(keyword_counts_moon.items(), columns=["Year", "Count"])
+  keyword_df_moon = pd.DataFrame(keyword_counts_moon.items(), columns=["Year", "Count"])
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(keyword_df_moon["Year"], keyword_df_moon["Count"], color='skyblue')
-    ax.set_title(f"Frequência de Palavras-chave sobre a Chegada à Lua ({min_year_moon}-{max_year_moon})", fontsize=16)
-    ax.set_xlabel("Ano", fontsize=12)
-    ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
-    st.pyplot(fig)
+  fig, ax = plt.subplots(figsize=(12, 6))
+  ax.bar(keyword_df_moon["Year"], keyword_df_moon["Count"], color='skyblue')
+  ax.set_title(f"Frequência de Palavras-chave sobre a Chegada à Lua ({min_year_moon}-{max_year_moon})", fontsize=16)
+  ax.set_xlabel("Ano", fontsize=12)
+  ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
+  st.pyplot(fig)
 
-    st.markdown("""
-    ### Guerra Fria (1950-1980)
-    Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes anos.
-    """)
+  st.markdown("""
+  ### Guerra Fria (1950-1980)
+  Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes anos.
+  """)
 
-    # Filtro para Guerra Fria
-    min_year_cold, max_year_cold = st.slider(
-        "Selecione o intervalo de anos para análise (Guerra Fria):",
-        1950, 2019, (1950, 2019)
-    )
-    filtered_df_cold_war = df[(df['year'] >= min_year_cold) & (df['year'] <= max_year_cold)]
-    keyword_counts_cold_war = {year: 0 for year in range(min_year_cold, max_year_cold + 1)}
+  # Filtro para Guerra Fria
+  min_year_cold, max_year_cold = st.slider(
+      "Selecione o intervalo de anos para análise (Guerra Fria):",
+      1950, 2019, (1950, 2019)
+  )
+  filtered_df_cold_war = df[(df['year'] >= min_year_cold) & (df['year'] <= max_year_cold)]
+  keyword_counts_cold_war = {year: 0 for year in range(min_year_cold, max_year_cold + 1)}
 
-    for year in range(min_year_cold, max_year_cold + 1):
-        year_df = filtered_df_cold_war[filtered_df_cold_war['year'] == year]
-        for _, row in year_df.iterrows():
-            lyrics = str(row['lyrics'])
-            keyword_counts_cold_war[year] += count_keywords(lyrics, keywords["cold_war"])
+  for year in range(min_year_cold, max_year_cold + 1):
+      year_df = filtered_df_cold_war[filtered_df_cold_war['year'] == year]
+      for _, row in year_df.iterrows():
+          lyrics = str(row['lyrics'])
+          keyword_counts_cold_war[year] += count_keywords(lyrics, keywords["cold_war"])
 
-    keyword_df_cold_war = pd.DataFrame(keyword_counts_cold_war.items(), columns=["Year", "Count"])
+  keyword_df_cold_war = pd.DataFrame(keyword_counts_cold_war.items(), columns=["Year", "Count"])
 
-    # Gráfico para Guerra Fria
-    fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(keyword_df_cold_war["Year"], keyword_df_cold_war["Count"], color='salmon')
-    ax.set_title(f"Frequência de Palavras-chave sobre a Guerra Fria ({min_year_cold}-{max_year_cold})", fontsize=16)
-    ax.set_xlabel("Ano", fontsize=12)
-    ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
-    st.pyplot(fig)
+  # Gráfico para Guerra Fria
+  fig, ax = plt.subplots(figsize=(12, 6))
+  ax.bar(keyword_df_cold_war["Year"], keyword_df_cold_war["Count"], color='salmon')
+  ax.set_title(f"Frequência de Palavras-chave sobre a Guerra Fria ({min_year_cold}-{max_year_cold})", fontsize=16)
+  ax.set_xlabel("Ano", fontsize=12)
+  ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
+  st.pyplot(fig)
 
 elif menu == "Clusterização":
     st.markdown("""
