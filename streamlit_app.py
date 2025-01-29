@@ -178,22 +178,13 @@ elif menu == "Distribuição por Décadas":
     
     # Distribuição de gêneros por década
     genre_distribution = filtered_df.groupby(['decade', 'genre']).size().unstack(fill_value=0)
-    
-    # Plotar o gráfico de heatmap com os dados filtrados
     fig, ax = plt.subplots(figsize=(12, 6))
-    
-    # Não exibir os números dentro do heatmap (remover as anotações)
     sns.heatmap(combined_data, annot=False, cmap="coolwarm", ax=ax)
-    
-    # Ajustando rótulos
     plt.xticks(rotation=0, ha='center')
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')  # 'ha' centraliza o texto
     ax.set_yticklabels(ax.get_yticklabels(), rotation=90)
     ax.set_title(f"Distribuição de Gêneros por Década ({min_year}-{max_year})")
-    
-    # Ajustando a rotação dos rótulos no eixo Y para horizontal
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
-    
     # Exibir o gráfico sem numeração no heatmap
     st.pyplot(fig)
 
@@ -203,7 +194,7 @@ elif menu == "Evolução Acústica":
     Isso ajuda a observar como as características musicais evoluíram ao longo dos anos.
     """)
     
-    # Filtrando os dados para remover valores ausentes nos atributos
+    # Filtrando os dados para remover valores zerados nos atributos
     df_filtered = df.dropna(subset=['decade'] + attributes)
     
     # Calculando a média dos atributos por década
@@ -218,20 +209,17 @@ elif menu == "Evolução Acústica":
     filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)]
     filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
     
-    # Selecionando os 3 atributos padrão para visualização inicial
+    # 3 atributos da visualização inicial
     default_attributes = ["danceability", "acousticness", "energy"]
-    
-    # Seletor para o usuário escolher os atributos, com os 3 atributos iniciais como padrão
+
     selected_attributes = st.multiselect(
         "Escolha os atributos para análise:",
         options=attributes,
         default=default_attributes  # Define 3 atributos iniciais por padrão
     )
 
-    # Calculando a média dos atributos selecionados
     decade_means = filtered_df.groupby('decade')[selected_attributes].mean().reset_index()
 
-    # Plotando os dados
     plt.figure(figsize=(12, 6))
     for attribute in selected_attributes:
         sns.lineplot(data=decade_means, x="decade", y=attribute, marker="o", label=attribute.capitalize())
@@ -241,7 +229,6 @@ elif menu == "Evolução Acústica":
     plt.ylabel("Média dos Atributos")
     plt.legend(title="Atributos")
     
-    # Renderizando o gráfico no Streamlit
     st.pyplot(plt)
 
 
