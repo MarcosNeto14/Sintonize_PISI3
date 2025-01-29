@@ -8,8 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
-import streamlit as st
 import re
+
 # Configurações iniciais
 st.set_page_config(page_title="Sintonize", layout="wide")
 
@@ -47,84 +47,61 @@ df['release_date'] = df['release_date'].astype(str).str.replace(",", "").str.spl
 df['year'] = pd.to_numeric(df['release_date'], errors='coerce')
 df['decade'] = (df['year'] // 10 * 10).astype('Int64')
 
-attributes = [ 'violence',	'world/life', 'night/time',	'shake the audience', 'family/gospel', 'romantic', 'communication', 'obscene', 'music',
+attributes = [ 'violence', 'world/life', 'night/time', 'shake the audience', 'family/gospel', 'romantic', 'communication', 'obscene', 'music',
 'movement/places', 'light/visual perceptions', 'family/spiritual', 'like/girls', 'sadness', 'feelings', 'danceability', 'loudness', 'acousticness',
-'instrumentalness',	'valence',	'energy']
+'instrumentalness', 'valence', 'energy']
 df[attributes] = df[attributes].apply(pd.to_numeric, errors='coerce')
 
-# Menu lateral com botões
+# Menu lateral 
 if "current_menu" not in st.session_state:
     st.session_state.current_menu = "Visão Geral"
+
+# Função para setar o menu
 def set_menu(menu):
     st.session_state.current_menu = menu
+
 st.sidebar.title("🎵 Sintonize")
 st.sidebar.subheader("Selecione o detalhamento desejado abaixo:")
-menu = None
+
+# Botões de navegação
 if st.sidebar.button("📄 Visão Geral"):
-    menu = "Visão Geral"
     set_menu("Visão Geral")
 if st.sidebar.button("📊  Distribuição por Décadas"):
-    menu = "Distribuição por Décadas"
     set_menu("Distribuição por Décadas")
 if st.sidebar.button("🎶  Evolução Acústica"):
-    menu = "Evolução Acústica"
     set_menu("Evolução Acústica")
 if st.sidebar.button("🌌 Palavras-chave e Contexto Histórico"):
-    menu = "Palavras-chave e Contexto Histórico"
     set_menu("Palavras-chave e Contexto Histórico")
 if st.sidebar.button("🔗  Clusterização"):
-    menu = "Clusterização"
     set_menu("Clusterização")
 if st.sidebar.button("🎼  Classificação de Gêneros"):
-    menu = "Classificação de Gêneros"
-if not menu:
-    menu = "Visão Geral"
     set_menu("Classificação de Gêneros")
+
+# Recupera o menu atual
 menu = st.session_state.current_menu
 
-# Mostrar a análise correspondente
 st.write(f"### {menu}")
+
 
 if menu == "Visão Geral":
     st.title("📊 Análise da Evolução Musical ao Longo das Décadas")
     st.subheader("Dataset: Music Dataset : 1950 to 2019")
     st.subheader("Usabilidade: 9.41")
-    st.markdown("""
-    O Sintonize utiliza um dataset contendo informações sobre músicas de diversas décadas, incluindo atributos como dançabilidade, energia, valência emocional e tristeza. 
-    A análise busca identificar padrões e tendências históricas, considerando eventos culturais e tecnológicos, como o impacto da internet nos gêneros musicais.
-    """)
-
+    st.markdown(""" O Sintonize utiliza um dataset contendo informações sobre músicas de diversas décadas, incluindo atributos como dançabilidade, energia, valência emocional e tristeza. A análise busca identificar padrões e tendências históricas, considerando eventos culturais e tecnológicos, como o impacto da internet nos gêneros musicais. """)
+    
     col1, col2, col3 = st.columns(3)
     df['year'] = df['year'].astype('Int64')
     col1.metric("🎵 Total de Músicas", f"{len(df):,}".replace(",", "."))
     col2.metric("🗓️ Período Coberto", f"{int(df['year'].min())} a {int(df['year'].max())}")
     col3.metric("🎼 Gêneros Únicos", f"{df['genre'].nunique()}")
     st.write("### Amostra dos Dados")
-    st.markdown("""
-    Esta tabela apresenta as **10 primeiras músicas** do dataset para uma visão inicial. 
-    Cada linha representa uma música e inclui informações como:
-    - 🎤 **Artista:** Quem interpretou a música.
-    - 🎵 **Nome da música:** O título da faixa.
-    - 🗓️ **Ano de lançamento:** Quando a música foi lançada.
-    - 📊 **Atributos musicais:** Dados como `danceability`, `energy`, e outros, que ajudam a descrever características sonoras.
-    """)
+    st.markdown(""" Esta tabela apresenta as **10 primeiras músicas** do dataset para uma visão inicial. Cada linha representa uma música e inclui informações como: - 🎤 **Artista:** Quem interpretou a música. - 🎵 **Nome da música:** O título da faixa. - 🗓️ **Ano de lançamento:** Quando a música foi lançada. - 📊 **Atributos musicais:** Dados como `danceability`, `energy`, e outros, que ajudam a descrever características sonoras. """)
     st.dataframe(df.head(10))
     st.write("#### Estatísticas Descritivas do Dataset")
-    st.markdown("""
-    Esta tabela fornece uma visão geral das características numéricas do dataset. 
-    Aqui estão os detalhes:
-    - **`count`**: Número de registros não nulos.
-    - **`mean`**: Média dos valores, útil para entender tendências gerais.
-    - **`std`**: Desvio padrão, indicando a variabilidade dos dados.
-    - **`min` e `max`**: Os valores extremos registrados.
-    - **`25%`, `50%`, `75%`**: Quartis, mostrando como os valores estão distribuídos.
-    """)
+    st.markdown(""" Esta tabela fornece uma visão geral das características numéricas do dataset. Aqui estão os detalhes: - **`count`**: Número de registros não nulos. - **`mean`**: Média dos valores, útil para entender tendências gerais. - **`std`**: Desvio padrão, indicando a variabilidade dos dados. - **`min` e `max`**: Os valores extremos registrados. - **`25%`, `50%`, `75%`**: Quartis, mostrando como os valores estão distribuídos. """)
     st.dataframe(df.describe())
 elif menu == "Distribuição por Décadas": 
-    st.markdown(""" 
-    Os gráficos mostram a quantidade de registros por gênero em cada década, ajudando a identificar as tendências musicais. 
-    - **Heatmap**: Facilita a comparação visual dos gêneros mais presentes ao longo do tempo.
-    """)
+    st.markdown(""" Os gráficos mostram a quantidade de registros por gênero em cada década, ajudando a identificar as tendências musicais. - **Heatmap**: Facilita a comparação visual dos gêneros mais presentes ao longo do tempo. """)
     
     decades = {
         "1950-1959": (1950, 1959),
@@ -148,45 +125,57 @@ elif menu == "Distribuição por Décadas":
     
     combined_data = pd.DataFrame(decade_data).fillna(0).astype(int)
     
-    # Interface do usuário
     st.title("Distribuição por Décadas")
     
     # Filtro de intervalo de anos
+    if 'min_year' not in st.session_state:
+        st.session_state.min_year = int(df['year'].min())
+    if 'max_year' not in st.session_state:
+        st.session_state.max_year = int(df['year'].max())
+
     min_year, max_year = st.slider(
         "Selecione o intervalo de anos para análise:",
         int(df['year'].min()), int(df['year'].max()),
-        (int(df['year'].min()), int(df['year'].max()))
+        (st.session_state.min_year, st.session_state.max_year)
     )
-    
+
+    # Atualiza os valores no session_state
+    st.session_state.min_year = min_year
+    st.session_state.max_year = max_year
+
     # Filtro de gêneros musicais
-    all_genres = sorted(df['genre'].dropna().unique())
+    if 'selected_genres' not in st.session_state:
+        st.session_state.selected_genres = sorted(df['genre'].dropna().unique())  # Define todos como padrão
+
     selected_genres = st.multiselect(
         "Selecione os gêneros musicais para análise:",
-        options=all_genres,
-        default=all_genres  # Seleciona todos por padrão
+        options=sorted(df['genre'].dropna().unique()),
+        default=st.session_state.selected_genres  # Usa o filtro armazenado no session_state
     )
-    
-    # Filtrar DataFrame com base no intervalo de anos e gêneros selecionados
+
+    # Atualiza os filtros no session_state
+    st.session_state.selected_genres = selected_genres
+
+    # Filtragem de dados
     filtered_df = df[
         (df['year'] >= min_year) & 
         (df['year'] <= max_year) & 
         (df['genre'].isin(selected_genres))
     ]
-    
-    # Adicionar a coluna de década para agrupar
+
     filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
     
     # Distribuição de gêneros por década
     genre_distribution = filtered_df.groupby(['decade', 'genre']).size().unstack(fill_value=0)
     fig, ax = plt.subplots(figsize=(12, 6))
-    sns.heatmap(combined_data, annot=False, cmap="coolwarm", ax=ax)
+    sns.heatmap(genre_distribution, annot=False, cmap="coolwarm", ax=ax)
     plt.xticks(rotation=0, ha='center')
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')  # 'ha' centraliza o texto
     ax.set_yticklabels(ax.get_yticklabels(), rotation=90)
     ax.set_title(f"Distribuição de Gêneros por Década ({min_year}-{max_year})")
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
-    # Exibir o gráfico sem numeração no heatmap
     st.pyplot(fig)
+
 
 elif menu == "Evolução Acústica":
     st.markdown("""
@@ -194,13 +183,12 @@ elif menu == "Evolução Acústica":
     Isso ajuda a observar como as características musicais evoluíram ao longo dos anos.
     """)
     
-    # Filtrando os dados para remover valores zerados nos atributos
+    # Remover valores zerados nos atributos
     df_filtered = df.dropna(subset=['decade'] + attributes)
     
     # Calculando a média dos atributos por década
     decade_means = df_filtered.groupby('decade')[attributes].mean().reset_index()
 
-    # Seletor de intervalo de anos
     min_year, max_year = st.slider(
         "Selecione o intervalo de anos para análise:",
         int(df['year'].min()), int(df['year'].max()), 
@@ -215,7 +203,7 @@ elif menu == "Evolução Acústica":
     selected_attributes = st.multiselect(
         "Escolha os atributos para análise:",
         options=attributes,
-        default=default_attributes  # Define 3 atributos iniciais por padrão
+        default=default_attributes 
     )
 
     decade_means = filtered_df.groupby('decade')[selected_attributes].mean().reset_index()
@@ -233,27 +221,53 @@ elif menu == "Evolução Acústica":
 
 
 if menu == "Palavras-chave e Contexto Histórico":
+    # --- MOVIMENTOS SOCIAIS E DIREITOS CIVIS (1960-1970) ---
+    st.markdown("### Movimentos Sociais e Direitos Civis (1960-1970)")
+    st.markdown("Gráfico mostrando a frequência de palavras-chave relacionadas aos direitos civis e movimentos sociais nas letras das músicas dessa época, destacando o impacto cultural e social.")
+
+    min_year_civil, max_year_civil = st.slider(
+        " ",
+        1950, 2019, (1960, 1970),
+        key="slider_civil_rights"
+    )
+
+    filtered_df_civil_rights = df[(df['year'] >= min_year_civil) & (df['year'] <= max_year_civil)]
+    keyword_counts_civil_rights = {year: 0 for year in range(min_year_civil, max_year_civil + 1)}
+
+    keywords_civil_rights = ["freedom", "equality", "racism", "protest", "civil rights", "justice", "segregation", "peace", "discrimination", 
+    "march", "activism", "black power", "revolution", "oppression", "human rights", "resistance", "liberation", "empowerment", "suffrage", "inequality"]
+
+    for _, row in filtered_df_civil_rights.iterrows():
+        lyrics = str(row['lyrics'])
+        year = row['year']
+        keyword_counts_civil_rights[year] += count_keywords(lyrics, keywords_civil_rights)
+
+    keyword_df_civil_rights = pd.DataFrame(keyword_counts_civil_rights.items(), columns=["Year", "Count"])
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(keyword_df_civil_rights["Year"], keyword_df_civil_rights["Count"], color='lightgreen')
+    ax.set_title(f"Frequência de Palavras-chave sobre Movimentos Sociais e Direitos Civis ({min_year_civil}-{max_year_civil})", fontsize=16)
+    ax.set_xlabel("Ano", fontsize=12)
+    ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
+    st.pyplot(fig)
+
+    # --- CHEGADA A LUA ---
     st.markdown("### Chegada à Lua (1967-1972)")
     st.markdown("Gráfico mostrando a frequência de palavras-chave relacionadas à missão Apollo nas letras, destacando o impacto cultural do evento.")
 
-    # Criar o slider antes do loop para evitar duplicação de chave
     min_year_moon, max_year_moon = st.slider(
-        "Selecione o intervalo de anos para análise (Chegada à Lua):",
+        " ",
         1950, 2019, (1967, 1972),
         key="slider_moon"
     )
 
-    # Filtrar o DataFrame
     filtered_df_moon = df[(df['year'] >= min_year_moon) & (df['year'] <= max_year_moon)]
     keyword_counts_moon = {year: 0 for year in range(min_year_moon, max_year_moon + 1)}
 
-    # Contar palavras-chave
     for _, row in filtered_df_moon.iterrows():
         lyrics = str(row['lyrics'])
         year = row['year']
         keyword_counts_moon[year] += count_keywords(lyrics, keywords["moon_landing"])
 
-    # Criar DataFrame e gerar gráfico
     keyword_df_moon = pd.DataFrame(keyword_counts_moon.items(), columns=["Year", "Count"])
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(keyword_df_moon["Year"], keyword_df_moon["Count"], color='skyblue')
@@ -266,24 +280,20 @@ if menu == "Palavras-chave e Contexto Histórico":
     st.markdown("### Guerra Fria (1950-1980)")
     st.markdown("Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes décadas.")
 
-    # Criar o slider antes do loop para evitar duplicação de chave
     min_year_cold, max_year_cold = st.slider(
-        "Selecione o intervalo de anos para análise (Guerra Fria):",
+        " ",
         1950, 2019, (1950, 1980),
         key="slider_cold_war"
     )
 
-    # Filtrar o DataFrame
     filtered_df_cold_war = df[(df['year'] >= min_year_cold) & (df['year'] <= max_year_cold)]
     keyword_counts_cold_war = {year: 0 for year in range(min_year_cold, max_year_cold + 1)}
 
-    # Contar palavras-chave
     for _, row in filtered_df_cold_war.iterrows():
         lyrics = str(row['lyrics'])
         year = row['year']
         keyword_counts_cold_war[year] += count_keywords(lyrics, keywords["cold_war"])
 
-    # Criar DataFrame e gerar gráfico
     keyword_df_cold_war = pd.DataFrame(keyword_counts_cold_war.items(), columns=["Year", "Count"])
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(keyword_df_cold_war["Year"], keyword_df_cold_war["Count"], color='salmon')
@@ -291,6 +301,9 @@ if menu == "Palavras-chave e Contexto Histórico":
     ax.set_xlabel("Ano", fontsize=12)
     ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
     st.pyplot(fig)
+
+
+
 elif menu == "Clusterização":
     st.markdown("""
     ### Agrupamento Baseado em Atributos Acústicos
