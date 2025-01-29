@@ -232,76 +232,60 @@ elif menu == "Evolução Acústica":
     st.pyplot(plt)
 
 
-elif menu == "Palavras-chave e Contexto Histórico":
-    st.markdown("""
-    ### Chegada à Lua (1967-1972)
-    ### Chegada à Lua
-    Gráfico mostrando a frequência de palavras-chave relacionadas à missão Apollo nas letras, destacando o impacto cultural do evento.
-    """)
+if menu == "Palavras-chave e Contexto Histórico":
+    st.markdown("### Chegada à Lua (1967-1972)")
+    st.markdown("Gráfico mostrando a frequência de palavras-chave relacionadas à missão Apollo nas letras, destacando o impacto cultural do evento.")
 
-    # Contar palavras-chave por ano (chegada à Lua entre 1967 e 1972)
-    keyword_counts_moon = {year: 0 for year in range(1967, 1973)}
-    for year in range(1967, 1973):
-        filtered_df = df[df['year'] == year]
-        for _, row in filtered_df.iterrows():
-            min_year_moon, max_year_moon = st.slider(
+    # Criar o slider antes do loop para evitar duplicação de chave
+    min_year_moon, max_year_moon = st.slider(
         "Selecione o intervalo de anos para análise (Chegada à Lua):",
-        1950, 2019, (1950, 2019)
+        1950, 2019, (1967, 1972),
+        key="slider_moon"
     )
+
+    # Filtrar o DataFrame
     filtered_df_moon = df[(df['year'] >= min_year_moon) & (df['year'] <= max_year_moon)]
     keyword_counts_moon = {year: 0 for year in range(min_year_moon, max_year_moon + 1)}
-    for year in range(min_year_moon, max_year_moon + 1):
-        year_df = filtered_df_moon[filtered_df_moon['year'] == year]
-        for _, row in year_df.iterrows():
-            lyrics = str(row['lyrics'])
-            keyword_counts_moon[year] += count_keywords(lyrics, keywords["moon_landing"])
-    keyword_df_moon = pd.DataFrame(keyword_counts_moon.items(), columns=["Year", "Count"])
 
-    # Visualizar gráfico para a chegada à Lua
+    # Contar palavras-chave
+    for _, row in filtered_df_moon.iterrows():
+        lyrics = str(row['lyrics'])
+        year = row['year']
+        keyword_counts_moon[year] += count_keywords(lyrics, keywords["moon_landing"])
+
+    # Criar DataFrame e gerar gráfico
+    keyword_df_moon = pd.DataFrame(keyword_counts_moon.items(), columns=["Year", "Count"])
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(keyword_df_moon["Year"], keyword_df_moon["Count"], color='skyblue')
-    ax.set_title("Frequência de Palavras-chave sobre a Chegada à Lua (1967-1972)", fontsize=16)
     ax.set_title(f"Frequência de Palavras-chave sobre a Chegada à Lua ({min_year_moon}-{max_year_moon})", fontsize=16)
     ax.set_xlabel("Ano", fontsize=12)
     ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
     st.pyplot(fig)
 
-    st.markdown("""
-    ### Guerra Fria (1950-1980)
-    Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes décadas.
-    Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes anos.
-    """)
+    # --- GUERRA FRIA ---
+    st.markdown("### Guerra Fria (1950-1980)")
+    st.markdown("Gráfico destacando palavras-chave sobre a Guerra Fria, mostrando sua influência em diferentes décadas.")
 
-    # Contar palavras-chave por década (Guerra Fria entre 1950 e 1980)
-    keyword_counts_cold_war = {decade: 0 for decade in range(1950, 1990, 10)}
-    for decade in range(1950, 1990, 10):
-        start_year = decade
-        end_year = decade + 9
-        filtered_df = df[(df['year'] >= start_year) & (df['year'] <= end_year)]
-        for _, row in filtered_df.iterrows():
-    # Filtro para Guerra Fria
-            min_year_cold, max_year_cold = st.slider(
+    # Criar o slider antes do loop para evitar duplicação de chave
+    min_year_cold, max_year_cold = st.slider(
         "Selecione o intervalo de anos para análise (Guerra Fria):",
-        1950, 2019, (1950, 2019)
+        1950, 2019, (1950, 1980),
+        key="slider_cold_war"
     )
+
+    # Filtrar o DataFrame
     filtered_df_cold_war = df[(df['year'] >= min_year_cold) & (df['year'] <= max_year_cold)]
     keyword_counts_cold_war = {year: 0 for year in range(min_year_cold, max_year_cold + 1)}
-    for year in range(min_year_cold, max_year_cold + 1):
-        year_df = filtered_df_cold_war[filtered_df_cold_war['year'] == year]
-        for _, row in year_df.iterrows():
-            lyrics = str(row['lyrics'])
-            keyword_counts_cold_war[decade] += count_keywords(lyrics, keywords["cold_war"])
-    keyword_df_cold_war = pd.DataFrame(keyword_counts_cold_war.items(), columns=["Decade", "Count"])
-    keyword_counts_cold_war[year] += count_keywords(lyrics, keywords["cold_war"])
 
-    # Visualizar gráfico para a Guerra Fria
+    # Contar palavras-chave
+    for _, row in filtered_df_cold_war.iterrows():
+        lyrics = str(row['lyrics'])
+        year = row['year']
+        keyword_counts_cold_war[year] += count_keywords(lyrics, keywords["cold_war"])
+
+    # Criar DataFrame e gerar gráfico
     keyword_df_cold_war = pd.DataFrame(keyword_counts_cold_war.items(), columns=["Year", "Count"])
-    # Gráfico para Guerra Fria
     fig, ax = plt.subplots(figsize=(12, 6))
-    ax.bar(keyword_df_cold_war["Decade"], keyword_df_cold_war["Count"], color='salmon')
-    ax.set_xticks(keyword_df_cold_war["Decade"])
-    ax.set_title("Frequência de Palavras-chave sobre a Guerra Fria", fontsize=16)
-    ax.set_xlabel("Década", fontsize=12)
     ax.bar(keyword_df_cold_war["Year"], keyword_df_cold_war["Count"], color='salmon')
     ax.set_title(f"Frequência de Palavras-chave sobre a Guerra Fria ({min_year_cold}-{max_year_cold})", fontsize=16)
     ax.set_xlabel("Ano", fontsize=12)
