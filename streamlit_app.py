@@ -120,8 +120,8 @@ if menu == "Visão Geral":
     - **`25%`, `50%`, `75%`**: Quartis, mostrando como os valores estão distribuídos.
     """)
     st.dataframe(df.describe())
-elif menu == "Distribuição por Décadas":
-    st.markdown("""
+elif menu == "Distribuição por Décadas": 
+    st.markdown(""" 
     Os gráficos mostram a quantidade de registros por gênero em cada década, ajudando a identificar as tendências musicais. 
     - **Heatmap**: Facilita a comparação visual dos gêneros mais presentes ao longo do tempo.
     """)
@@ -181,7 +181,11 @@ elif menu == "Distribuição por Décadas":
     
     # Plotar o gráfico de heatmap com os dados filtrados
     fig, ax = plt.subplots(figsize=(12, 6))
-    sns.heatmap(combined_data, annot=True, fmt="d", cmap="coolwarm", ax=ax)
+    
+    # Não exibir os números dentro do heatmap (remover as anotações)
+    sns.heatmap(combined_data, annot=False, cmap="coolwarm", ax=ax)
+    
+    # Ajustando rótulos
     plt.xticks(rotation=0, ha='center')
     ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')  # 'ha' centraliza o texto
     ax.set_yticklabels(ax.get_yticklabels(), rotation=90)
@@ -190,6 +194,7 @@ elif menu == "Distribuição por Décadas":
     # Ajustando a rotação dos rótulos no eixo Y para horizontal
     ax.set_yticklabels(ax.get_yticklabels(), rotation=0)
     
+    # Exibir o gráfico sem numeração no heatmap
     st.pyplot(fig)
 
 elif menu == "Evolução Acústica":
