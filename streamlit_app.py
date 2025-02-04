@@ -182,22 +182,32 @@ elif menu == "Evolução Acústica":
     A linha do tempo mostra a variação de atributos como **dançabilidade**, **acústica** e **energia** por década. 
     Isso ajuda a observar como as características musicais evoluíram ao longo dos anos.
     """)
-    
-    # Remover valores zerados nos atributos
-    df_filtered = df.dropna(subset=['decade'] + attributes)
-    
-    # Calculando a média dos atributos por década
-    decade_means = df_filtered.groupby('decade')[attributes].mean().reset_index()
+
+    df_filtered = df.dropna(subset=['year'] + attributes)
 
     min_year, max_year = st.slider(
         "Selecione o intervalo de anos para análise:",
         int(df['year'].min()), int(df['year'].max()), 
         (int(df['year'].min()), int(df['year'].max()))
     )
-    filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)]
-    filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
-    
-    # 3 atributos da visualização inicial
+
+    filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)].copy()
+
+    filtered_df['year'] = filtered_df['year'].astype(int)
+
+    year_range = max_year - min_year
+
+    if year_range >= 40:
+        step = 10
+    elif year_range >= 25:
+        step = 5
+    elif year_range >= 10:
+        step = 2
+    else:
+        step = 1
+
+    filtered_df['period'] = (filtered_df['year'] // step * step).astype(int)
+
     default_attributes = ["danceability", "acousticness", "energy"]
 
     selected_attributes = st.multiselect(
@@ -206,18 +216,21 @@ elif menu == "Evolução Acústica":
         default=default_attributes 
     )
 
-    decade_means = filtered_df.groupby('decade')[selected_attributes].mean().reset_index()
+    # Agrupando por período e calculando a média
+    period_means = filtered_df.groupby('period')[selected_attributes].mean().reset_index()
 
     plt.figure(figsize=(12, 6))
     for attribute in selected_attributes:
-        sns.lineplot(data=decade_means, x="decade", y=attribute, marker="o", label=attribute.capitalize())
-    
-    plt.title(f"Evolução dos Atributos Acústicos por Década ({min_year}-{max_year})")
-    plt.xlabel("Década")
+        sns.lineplot(data=period_means, x="period", y=attribute, marker="o", label=attribute.capitalize())
+
+    plt.title(f"Evolução dos Atributos Acústicos ({min_year}-{max_year})")
+    plt.xlabel("Ano")
     plt.ylabel("Média dos Atributos")
+    plt.xticks(sorted(period_means['period'].unique()))  # Garante valores inteiros no eixo X
     plt.legend(title="Atributos")
-    
+
     st.pyplot(plt)
+
 
 
 if menu == "Palavras-chave e Contexto Histórico":
@@ -234,21 +247,30 @@ if menu == "Palavras-chave e Contexto Histórico":
     filtered_df_civil_rights = df[(df['year'] >= min_year_civil) & (df['year'] <= max_year_civil)]
     keyword_counts_civil_rights = {year: 0 for year in range(min_year_civil, max_year_civil + 1)}
 
-    keywords_civil_rights = ["freedom", "equality", "racism", "protest", "civil rights", "justice", "segregation", "peace", "discrimination", 
-    "march", "activism", "black power", "revolution", "oppression", "human rights", "resistance", "liberation", "empowerment", "suffrage", "inequality"]
+    keywords_civil_rights = [
+        "freedom", "equality", "racism", "protest", "civil rights", "justice", "segregation", "peace", "discrimination", 
+        "march", "activism", "black power", "revolution", "oppression", "human rights", "resistance", "liberation", 
+        "empowerment", "suffrage", "inequality"
+    ]
 
     for _, row in filtered_df_civil_rights.iterrows():
         lyrics = str(row['lyrics'])
-        year = row['year']
+        year = int(row['year'])
         keyword_counts_civil_rights[year] += count_keywords(lyrics, keywords_civil_rights)
 
-    keyword_df_civil_rights = pd.DataFrame(keyword_counts_civil_rights.items(), columns=["Year", "Count"])
+    keyword_df_civil_rights = pd.DataFrame(list(keyword_counts_civil_rights.items()), columns=["Year", "Count"])
+    keyword_df_civil_rights["Year"] = keyword_df_civil_rights["Year"].astype(int)
+
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(keyword_df_civil_rights["Year"], keyword_df_civil_rights["Count"], color='lightgreen')
     ax.set_title(f"Frequência de Palavras-chave sobre Movimentos Sociais e Direitos Civis ({min_year_civil}-{max_year_civil})", fontsize=16)
     ax.set_xlabel("Ano", fontsize=12)
     ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
+
+    ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
+
     st.pyplot(fig)
+
 
     # --- CHEGADA A LUA ---
     st.markdown("### Chegada à Lua (1967-1972)")
