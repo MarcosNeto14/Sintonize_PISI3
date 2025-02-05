@@ -9,6 +9,9 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 import re
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import mean_absolute_error
 
 # Configurações iniciais
 st.set_page_config(page_title="Sintonize", layout="wide")
@@ -76,6 +79,8 @@ if st.sidebar.button("🔗  Clusterização"):
     set_menu("Clusterização")
 if st.sidebar.button("🎼  Classificação de Gêneros"):
     set_menu("Classificação de Gêneros")
+if st.sidebar.button("📈 Previsão de Tendências de Gêneros"):
+    set_menu("Previsão de Tendências de Gêneros")
 
 # Recupera o menu atual
 menu = st.session_state.current_menu
@@ -125,7 +130,7 @@ elif menu == "Distribuição por Décadas":
     
     combined_data = pd.DataFrame(decade_data).fillna(0).astype(int)
     
-    st.title("Distribuição por Décadas")
+    #st.title("Distribuição por Décadas")
     
     # Filtro de intervalo de anos
     if 'min_year' not in st.session_state:
@@ -182,32 +187,22 @@ elif menu == "Evolução Acústica":
     A linha do tempo mostra a variação de atributos como **dançabilidade**, **acústica** e **energia** por década. 
     Isso ajuda a observar como as características musicais evoluíram ao longo dos anos.
     """)
-
-    df_filtered = df.dropna(subset=['year'] + attributes)
+    
+    # Remover valores zerados nos atributos
+    df_filtered = df.dropna(subset=['decade'] + attributes)
+    
+    # Calculando a média dos atributos por década
+    decade_means = df_filtered.groupby('decade')[attributes].mean().reset_index()
 
     min_year, max_year = st.slider(
         "Selecione o intervalo de anos para análise:",
         int(df['year'].min()), int(df['year'].max()), 
         (int(df['year'].min()), int(df['year'].max()))
     )
-
-    filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)].copy()
-
-    filtered_df['year'] = filtered_df['year'].astype(int)
-
-    year_range = max_year - min_year
-
-    if year_range >= 40:
-        step = 10
-    elif year_range >= 25:
-        step = 5
-    elif year_range >= 10:
-        step = 2
-    else:
-        step = 1
-
-    filtered_df['period'] = (filtered_df['year'] // step * step).astype(int)
-
+    filtered_df = df[(df['year'] >= min_year) & (df['year'] <= max_year)]
+    filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
+    
+    # 3 atributos da visualização inicial
     default_attributes = ["danceability", "acousticness", "energy"]
 
     selected_attributes = st.multiselect(
@@ -216,21 +211,18 @@ elif menu == "Evolução Acústica":
         default=default_attributes 
     )
 
-    # Agrupando por período e calculando a média
-    period_means = filtered_df.groupby('period')[selected_attributes].mean().reset_index()
+    decade_means = filtered_df.groupby('decade')[selected_attributes].mean().reset_index()
 
     plt.figure(figsize=(12, 6))
     for attribute in selected_attributes:
-        sns.lineplot(data=period_means, x="period", y=attribute, marker="o", label=attribute.capitalize())
-
-    plt.title(f"Evolução dos Atributos Acústicos ({min_year}-{max_year})")
-    plt.xlabel("Ano")
+        sns.lineplot(data=decade_means, x="decade", y=attribute, marker="o", label=attribute.capitalize())
+    
+    plt.title(f"Evolução dos Atributos Acústicos por Década ({min_year}-{max_year})")
+    plt.xlabel("Década")
     plt.ylabel("Média dos Atributos")
-    plt.xticks(sorted(period_means['period'].unique()))  # Garante valores inteiros no eixo X
     plt.legend(title="Atributos")
-
+    
     st.pyplot(plt)
-
 
 
 if menu == "Palavras-chave e Contexto Histórico":
@@ -247,30 +239,21 @@ if menu == "Palavras-chave e Contexto Histórico":
     filtered_df_civil_rights = df[(df['year'] >= min_year_civil) & (df['year'] <= max_year_civil)]
     keyword_counts_civil_rights = {year: 0 for year in range(min_year_civil, max_year_civil + 1)}
 
-    keywords_civil_rights = [
-        "freedom", "equality", "racism", "protest", "civil rights", "justice", "segregation", "peace", "discrimination", 
-        "march", "activism", "black power", "revolution", "oppression", "human rights", "resistance", "liberation", 
-        "empowerment", "suffrage", "inequality"
-    ]
+    keywords_civil_rights = ["freedom", "equality", "racism", "protest", "civil rights", "justice", "segregation", "peace", "discrimination", 
+    "march", "activism", "black power", "revolution", "oppression", "human rights", "resistance", "liberation", "empowerment", "suffrage", "inequality"]
 
     for _, row in filtered_df_civil_rights.iterrows():
         lyrics = str(row['lyrics'])
-        year = int(row['year'])
+        year = row['year']
         keyword_counts_civil_rights[year] += count_keywords(lyrics, keywords_civil_rights)
 
-    keyword_df_civil_rights = pd.DataFrame(list(keyword_counts_civil_rights.items()), columns=["Year", "Count"])
-    keyword_df_civil_rights["Year"] = keyword_df_civil_rights["Year"].astype(int)
-
+    keyword_df_civil_rights = pd.DataFrame(keyword_counts_civil_rights.items(), columns=["Year", "Count"])
     fig, ax = plt.subplots(figsize=(12, 6))
     ax.bar(keyword_df_civil_rights["Year"], keyword_df_civil_rights["Count"], color='lightgreen')
     ax.set_title(f"Frequência de Palavras-chave sobre Movimentos Sociais e Direitos Civis ({min_year_civil}-{max_year_civil})", fontsize=16)
     ax.set_xlabel("Ano", fontsize=12)
     ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
-
-    ax.xaxis.set_major_locator(plt.MaxNLocator(integer=True))
-
     st.pyplot(fig)
-
 
     # --- CHEGADA A LUA ---
     st.markdown("### Chegada à Lua (1967-1972)")
@@ -437,3 +420,44 @@ elif menu == "Classificação de Gêneros":
     dificuldades para identificar corretamente os gêneros. 
     Ajustes futuros podem melhorar o desempenho ao adicionar mais palavras-chave ou ao treinar com dados mais equilibrados.
     """)
+
+elif menu == "Previsão de Tendências de Gêneros":
+    
+    # Agrupar os dados por ano e gênero
+    genre_trends = df.groupby(['year', 'genre']).size().reset_index(name='count')
+    
+    # Selecionar um gênero para análise
+    selected_genre = st.selectbox("🎼 Escolha um gênero para previsão:", genre_trends['genre'].unique())
+    
+    # Filtrar os dados pelo gênero selecionado
+    filtered_data = genre_trends[genre_trends['genre'] == selected_genre]
+    
+    # Criar variáveis para treinamento
+    X = filtered_data[['year']]
+    y = filtered_data['count']
+    
+    # Dividir os dados em treino e teste
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    
+    # Criar e treinar o modelo
+    model = RandomForestRegressor(n_estimators=100, random_state=42)
+    model.fit(X_train, y_train)
+    
+    # Previsão para os próximos anos
+    future_years = np.array(range(int(df['year'].max()) + 1, int(df['year'].max()) + 11)).reshape(-1, 1)
+    future_predictions = model.predict(future_years)
+    
+    # Avaliação do modelo
+    y_pred = model.predict(X_test)
+    mae = mean_absolute_error(y_test, y_pred)
+    st.write(f"📊 **Erro Médio Absoluto (MAE):** {mae:.2f}")
+    
+    # Criar gráfico da previsão
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(filtered_data['year'], filtered_data['count'], label="Dados Históricos", marker='o')
+    ax.plot(future_years, future_predictions, label="Previsão", linestyle='dashed', marker='o', color='red')
+    ax.set_xlabel("Ano")
+    ax.set_ylabel("Popularidade")
+    ax.set_title(f"📈 Tendência do gênero {selected_genre}")
+    ax.legend()
+    st.pyplot(fig)
