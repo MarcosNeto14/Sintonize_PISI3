@@ -226,6 +226,42 @@ elif menu == "Evolução Acústica":
 
 
 if menu == "Palavras-chave e Contexto Histórico":
+    st.markdown("### Impacto do 11 de Setembro (2001-presente)")
+    st.markdown("Gráfico mostrando a frequência de palavras-chave relacionadas ao 11 de setembro nas letras das músicas, destacando como o evento influenciou a música pós-2001.")
+
+    # Intervalo de anos pós-11 de setembro
+    min_year_sept, max_year_sept = st.slider(
+        " ",
+        1950, 2019, (1990, 2010),
+        key="slider_sept11"
+    )
+
+    filtered_df_sept = df[(df['year'] >= min_year_sept) & (df['year'] <= max_year_sept)]
+    keyword_counts_sept = {year: 0 for year in range(min_year_sept, max_year_sept + 1)}
+
+    # Palavras-chave relacionadas ao 11 de setembro
+    keywords_sept = ["terrorism", "9/11", "attack", "freedom", "security", "war", "peace", "conflict", "nation", "terror", "fight", "patriotism", "Afghanistan", 
+    "Iraq", "defense", "homeland", "world trade center", "Al-Qaeda", "bin laden", "resilience", "grief", "unity", "reconstruction", "global impact",
+     "freedom vs security", "national pride", "loss", "memorial", "response", "vengeance", "survival", "reflections", "civil liberties", "military action",
+      "recovery", "never forget", "geopolitics"]
+
+
+    # Contar palavras-chave nas letras das músicas
+    for _, row in filtered_df_sept.iterrows():
+        lyrics = str(row['lyrics'])
+        year = row['year']
+        keyword_counts_sept[year] += count_keywords(lyrics, keywords_sept)
+
+    # Gerar gráfico de contagem de palavras-chave
+    keyword_df_sept = pd.DataFrame(keyword_counts_sept.items(), columns=["Year", "Count"])
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.bar(keyword_df_sept["Year"], keyword_df_sept["Count"], color='lightcoral')
+    ax.set_title(f"Frequência de Palavras-chave sobre o Impacto do 11 de Setembro ({min_year_sept}-{max_year_sept})", fontsize=16)
+    ax.set_xlabel("Ano", fontsize=12)
+    ax.set_ylabel("Contagem de Palavras-chave", fontsize=12)
+    st.pyplot(fig)
+
+    
     # --- MOVIMENTOS SOCIAIS E DIREITOS CIVIS (1960-1970) ---
     st.markdown("### Movimentos Sociais e Direitos Civis (1960-1970)")
     st.markdown("Gráfico mostrando a frequência de palavras-chave relacionadas aos direitos civis e movimentos sociais nas letras das músicas dessa época, destacando o impacto cultural e social.")
