@@ -13,7 +13,7 @@ evolucao = st.Page("acoustic.py", title="Evolução Acústica", icon=":material/
 ## área de modelos 
 palavras_chave = st.Page("keywords.py", title="Palavras-chave e Contexto Histórico", icon=":material/key:")
 clusterizacao = st.Page("clustering.py", title="Clusterização", icon=":material/grain:")
-classificacao = st.Page("classification.py", title="Classificação de Gêneros", icon=":material/library_music:")
+classificacao = st.Page("genre_classification.py", title="Classificação de Gêneros", icon=":material/library_music:")
 previsao = st.Page("prediction.py", title="Previsão de Tendências de Gêneros", icon=":material/search_insights:")
 
 # chamando o sidemenu

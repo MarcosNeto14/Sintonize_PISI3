@@ -26,30 +26,49 @@ st.markdown("""
 Os gráficos mostram a quantidade de registros por gênero em cada década, ajudando a identificar as tendências musicais.
 """)
 
-# Definição das décadas
-decades = {
-    "1950-1959": (1950, 1959),
-    "1960-1969": (1960, 1969),
-    "1970-1979": (1970, 1979),
-    "1980-1989": (1980, 1989),
-    "1990-1999": (1990, 1999),
-    "2000-2009": (2000, 2009),
-    "2010-2019": (2010, 2019),
-}
+# Filtro de intervalo de anos
+if 'min_year' not in st.session_state:
+    st.session_state.min_year = int(df['year'].min())
+if 'max_year' not in st.session_state:
+    st.session_state.max_year = int(df['year'].max())
 
-# Mapeamento por década
-decade_data = {}
-for decade, (start, end) in decades.items():
-    filtered_df = df[(df['year'] >= start) & (df['year'] <= end)]
-    count_by_genre = filtered_df['genre'].value_counts()
-    decade_data[decade] = count_by_genre
+min_year, max_year = st.slider(
+    "Selecione o intervalo de anos para análise:",
+    int(df['year'].min()), int(df['year'].max()),
+    (st.session_state.min_year, st.session_state.max_year)
+)
 
-combined_data = pd.DataFrame(decade_data).fillna(0).astype(int)
+st.session_state.min_year = min_year
+st.session_state.max_year = max_year
+
+# Filtro de gêneros musicais
+if 'selected_genres' not in st.session_state:
+    st.session_state.selected_genres = sorted(df['genre'].dropna().unique())
+
+selected_genres = st.multiselect(
+    "Selecione os gêneros musicais para análise:",
+    options=sorted(df['genre'].dropna().unique()),
+    default=st.session_state.selected_genres
+)
+
+st.session_state.selected_genres = selected_genres
+
+# Filtragem de dados
+filtered_df = df[
+    (df['year'] >= min_year) & 
+    (df['year'] <= max_year) & 
+    (df['genre'].isin(selected_genres))
+]
+
+filtered_df['decade'] = (filtered_df['year'] // 10 * 10).astype(int)
+
+# Distribuição de gêneros por década
+genre_distribution = filtered_df.groupby(['decade', 'genre']).size().unstack(fill_value=0)
 
 # Exibição do Heatmap
 st.write("### Heatmap de Gêneros por Década")
 fig, ax = plt.subplots(figsize=(12, 6))
-sns.heatmap(combined_data, annot=False, cmap="coolwarm", ax=ax)
+sns.heatmap(genre_distribution, annot=False, cmap="coolwarm", ax=ax)
 plt.xticks(rotation=0, ha='center')
-ax.set_title("Distribuição de Gêneros por Década")
+ax.set_title(f"Distribuição de Gêneros por Década ({min_year}-{max_year})")
 st.pyplot(fig)
