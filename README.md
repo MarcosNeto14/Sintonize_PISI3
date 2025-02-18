@@ -15,5 +15,5 @@ Solução desenvolvida para a disciplina de PISI3 do curso de BSI na UFRPE
 2. Run the app
 
    ```
-   $ streamlit run streamlit_app.py
+   $ streamlit run sidemenu.py
    ```
