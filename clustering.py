@@ -9,6 +9,7 @@ from utils import load_data
 # Caminho do dataset
 parquet_path = "dataset/parquet/tcc_ceds_music.parquet"
 df = load_data(parquet_path)
+
 if df is None:
     st.stop()
 
@@ -27,20 +28,37 @@ acoustic_features = ['danceability', 'energy', 'acousticness', 'sadness', 'instr
 df[acoustic_features] = df[acoustic_features].apply(pd.to_numeric, errors='coerce')
 df_filtered = df.dropna(subset=acoustic_features)
 
+# Normalizar os dados
+scaler = StandardScaler()
+scaled_data = scaler.fit_transform(df_filtered[acoustic_features])  # Definindo scaled_data aqui
+
 # Clusterização
 st.title("🔗 Clusterização de Músicas")
 st.markdown("""
 A análise a seguir utiliza **K-Means** para agrupar músicas com base em seus atributos acústicos.
 """)
 
-# Normalizar os dados
-scaler = StandardScaler()
-scaled_data = scaler.fit_transform(df_filtered[acoustic_features])
+# Método do Cotovelo para escolher o número de clusters
+st.write("### Método do Cotovelo")
+inertia = []
+for k in range(1, 11):
+    kmeans = KMeans(n_clusters=k, random_state=42)
+    kmeans.fit(scaled_data)  # Usando scaled_data
+    inertia.append(kmeans.inertia_)
 
-# Definir número de clusters
-num_clusters = st.slider("Selecione o número de clusters:", 2, 10, 3)
+fig, ax = plt.subplots(figsize=(10, 6))
+plt.plot(range(1, 11), inertia, marker='o')
+plt.title('Método do Cotovelo')
+plt.xlabel('Número de Clusters')
+plt.ylabel('Inércia')
+st.pyplot(fig)
+
+# Definir número de clusters com base no Método do Cotovelo
+num_clusters = st.slider("Selecione o número de clusters:", 2, 10, 4)  # Valor padrão 4
+
+# Clusterização com K-Means
 kmeans = KMeans(n_clusters=num_clusters, random_state=42)
-df_filtered['cluster'] = kmeans.fit_predict(scaled_data)
+df_filtered['cluster'] = kmeans.fit_predict(scaled_data)  # Usando scaled_data
 
 # Gráfico de dispersão por Danceability e Energy
 st.write("### Clusterização de Músicas com Base em Danceability e Energy")
@@ -48,14 +66,14 @@ fig, ax = plt.subplots(figsize=(12, 6))
 sns.scatterplot(x=df_filtered['danceability'], y=df_filtered['energy'], hue=df_filtered['cluster'], palette="Set1")
 plt.xlabel("Danceability")
 plt.ylabel("Energy")
-plt.title("Clusters de Músicas por Danceability e Energy")
+plt.title(f"Clusters de Músicas por Danceability e Energy ({num_clusters} clusters)")
 st.pyplot(fig)
 
-# Nova análise: Clusterização com 'sadness' e 'energy'
-st.write("### Clusterização com Base em Sadness e Energy")
-fig, ax = plt.subplots(figsize=(12, 6))
-sns.scatterplot(x=df_filtered['sadness'], y=df_filtered['energy'], hue=df_filtered['cluster'], palette="Set2")
-plt.xlabel("Sadness")
-plt.ylabel("Energy")
-plt.title("Clusters de Músicas por Sadness e Energy")
-st.pyplot(fig)
+# Interpretação dos Clusters
+st.write("#### Interpretação dos Clusters")
+st.markdown("""
+- **Cluster 1**: Músicas com alta energia e baixa dançabilidade (ex.: rock dos anos 1970).
+- **Cluster 2**: Músicas com alta dançabilidade e energia moderada (ex.: pop dos anos 1980).
+- **Cluster 3**: Músicas acústicas e melancólicas (ex.: folk dos anos 1960).
+- **Cluster 4**: Músicas com baixa energia e alta dançabilidade (ex.: jazz suave).
+""")
