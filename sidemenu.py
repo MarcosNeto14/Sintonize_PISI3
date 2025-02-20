@@ -9,6 +9,7 @@ st.set_page_config(page_title="Sintonize", layout="wide")
 visao_geral = st.Page("overview.py", title="Visão Geral", icon=":material/home:", default=True)
 distribuicao = st.Page("decades.py", title="Distribuição por Décadas", icon=":material/query_stats:")
 evolucao = st.Page("acoustic.py", title="Evolução Acústica", icon=":material/chart_data:")
+resultados = st.Page("results.py", title="Resultados", icon=":material/chart_data:")
 
 ## área de modelos 
 palavras_chave = st.Page("keywords.py", title="Palavras-chave e Contexto Histórico", icon=":material/key:")
@@ -19,7 +20,7 @@ previsao = st.Page("prediction.py", title="Previsão de Tendências de Gêneros"
 # chamando o sidemenu
 pg = st.navigation(
     {
-        "Análises": [visao_geral, distribuicao, evolucao],
+        "Análises": [visao_geral, distribuicao, evolucao, resultados],
         "Modelos": [palavras_chave, clusterizacao, classificacao, previsao],
     }
 )

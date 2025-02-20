@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.svm import SVC
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import RandomUnderSampler
+from sklearn.neighbors import KNeighborsClassifier
 from utils import load_data, count_keywords
 
 # Caminho do dataset
@@ -25,7 +29,7 @@ if 'year' not in df.columns:
 # Página de Classificação de Gêneros
 st.title("🎼 Classificação de Gêneros")
 st.markdown("""
-A análise a seguir utiliza **Random Forest** para classificar gêneros musicais com base em palavras-chave extraídas das letras.
+A análise a seguir permite selecionar diferentes modelos para classificar gêneros musicais com base em palavras-chave extraídas das letras.
 """)
 
 # Definir palavras-chave para cada gênero musical
@@ -59,24 +63,39 @@ y = pd.Series(y)
 # Dividir os dados em treino e teste
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Treinar o modelo Random Forest
-rf = RandomForestClassifier(n_estimators=100, random_state=42)
-rf.fit(X_train, y_train)
+# Criar opção de seleção de modelo
+model_choice = st.selectbox("Escolha o modelo de classificação:", ["Random Forest", "SVM", "SVM + SMOTE", "KNN + Undersampling"])
+
+if model_choice == "Random Forest":
+    model = RandomForestClassifier(n_estimators=100, random_state=42)
+elif model_choice == "SVM":
+    model = SVC(kernel='linear', random_state=42)
+elif model_choice == "SVM + SMOTE":
+    smote = SMOTE(random_state=42)
+    X_train, y_train = smote.fit_resample(X_train, y_train)
+    model = SVC(kernel='linear', random_state=42)
+elif model_choice == "KNN + Undersampling":
+    undersampler = RandomUnderSampler(random_state=42)
+    X_train, y_train = undersampler.fit_resample(X_train, y_train)
+    model = KNeighborsClassifier(n_neighbors=5)
+
+# Treinar o modelo
+model.fit(X_train, y_train)
 
 # Fazer previsões no conjunto de teste
-y_pred = rf.predict(X_test)
+y_pred = model.predict(X_test)
 
 # Exibir as métricas de avaliação
 report = classification_report(y_test, y_pred, target_names=keywords.keys(), output_dict=True)
 st.write("Métricas de Avaliação:")
 st.write(f"Precision, Recall, F1-Score e Support para cada Gênero:")
-st.write("Random Forest")
+st.write(f"{model_choice}")
 
 # Mostrar as métricas de avaliação
 metrics_df = pd.DataFrame(report).transpose()
 st.dataframe(metrics_df)
+
 st.markdown("""
-A accuracy de 0.25 e a baixa precision, recall e F1-score tanto na macro quanto na weighted average indicam que o modelo está tendo 
-dificuldades para identificar corretamente os gêneros. 
+A accuracy e as métricas indicam o desempenho do modelo selecionado na classificação dos gêneros musicais.
 Ajustes futuros podem melhorar o desempenho ao adicionar mais palavras-chave ou ao treinar com dados mais equilibrados.
 """)
