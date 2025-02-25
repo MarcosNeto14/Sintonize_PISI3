@@ -16,7 +16,6 @@ df = load_data(parquet_path)
 if df is None:
     st.stop()
 
-# Verificar se a coluna 'year' existe
 if 'year' not in df.columns:
     if 'release_date' in df.columns:
         df['release_date'] = df['release_date'].astype(str).str.replace(",", "").str.split(".").str[0]
@@ -32,21 +31,20 @@ st.markdown("""
 A análise a seguir permite selecionar diferentes modelos para classificar gêneros musicais com base em palavras-chave extraídas das letras.
 """)
 
-# Definir palavras-chave para cada gênero musical
 keywords = {
-    "blues": ["sad", "blues", "heartbreak", "crying", "rain"],
-    "country": ["cowboy", "boots", "country", "ranch", "honky", "tumbleweed"],
-    "pop": ["party", "love", "dance", "night", "club", "girl", "boy"],
-    "hip_hop": ["rap", "street", "flow", "beat", "b-boy", "gangsta"],
-    "jazz": ["improvisation", "saxophone", "swing", "blues", "jazz"],
-    "reggae": ["rasta", "dub", "jah", "roots", "bob", "rastafari"],
-    "rock": ["guitar", "rock", "band", "concert", "stage", "electric"]
+    "blues": ["sad", "blues", "heartbreak", "crying", "rain", "whiskey", "trouble", "lonely", "devil", "soul", "pain"],
+    "country": ["cowboy", "boots", "country", "ranch", "honky", "tumbleweed", "truck", "whiskey", "barn", "horse", "southern", "fiddle"],
+    "pop": ["party", "love", "dance", "night", "club", "girl", "boy", "baby", "radio", "top", "dream", "kiss", "music", "heart"],
+    "hip_hop": ["rap", "street", "flow", "beat", "b-boy", "gangsta", "money", "hustle", "rhymes", "mic", "crew", "trap", "real"],
+    "jazz": ["improvisation", "saxophone", "swing", "blues", "jazz", "piano", "trumpet", "bass", "chords", "melody", "harmony", "scat"],
+    "reggae": ["rasta", "dub", "jah", "roots", "bob", "rastafari", "ganja", "irie", "vibes", "marley", "sunshine", "peace", "one love"],
+    "rock": ["guitar", "rock", "band", "concert", "stage", "electric", "drums", "solo", "riff", "headbang", "loud", "rebel", "live"]
 }
+
 
 df = df.dropna(subset=['lyrics', 'genre'])
 df['lyrics'] = df['lyrics'].fillna('')
 
-# Preparar os dados para a classificação
 X = []
 y = []
 
@@ -63,7 +61,7 @@ y = pd.Series(y)
 # Dividir os dados em treino e teste
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
-# Criar opção de seleção de modelo
+# Filtro modelo
 model_choice = st.selectbox("Escolha o modelo de classificação:", ["Random Forest", "SVM", "SVM + SMOTE", "KNN + Undersampling"])
 
 if model_choice == "Random Forest":
@@ -81,17 +79,13 @@ elif model_choice == "KNN + Undersampling":
 
 # Treinar o modelo
 model.fit(X_train, y_train)
-
-# Fazer previsões no conjunto de teste
 y_pred = model.predict(X_test)
 
-# Exibir as métricas de avaliação
 report = classification_report(y_test, y_pred, target_names=keywords.keys(), output_dict=True)
 st.write("Métricas de Avaliação:")
 st.write(f"Precision, Recall, F1-Score e Support para cada Gênero:")
 st.write(f"{model_choice}")
 
-# Mostrar as métricas de avaliação
 metrics_df = pd.DataFrame(report).transpose()
 st.dataframe(metrics_df)
 
