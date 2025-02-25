@@ -2,7 +2,7 @@ import streamlit as st
 
 st.set_page_config(page_title="Sintonize", layout="wide")
 visao_geral = st.Page("overview.py", title="Visão Geral", icon=":material/home:", default=True)
-outliers = st.Page("acoustic.py", title="Análise de Outliers", icon=":material/chart_data:")
+outliers = st.Page("outliers.py", title="Análise de Outliers", icon=":material/chart_data:")
 distribuicao = st.Page("decades.py", title="Distribuição por Décadas", icon=":material/query_stats:")
 evolucao = st.Page("acoustic.py", title="Evolução Acústica", icon=":material/chart_data:")
 

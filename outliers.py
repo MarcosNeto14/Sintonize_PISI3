@@ -60,8 +60,6 @@ if analysis_type == "Atributos Acústicos":
             sns.boxplot(x=df_cleaned[attribute], ax=ax)
             st.pyplot(fig)
             df = df_cleaned
-
-        st.success("Outliers removidos com sucesso! O dataset foi atualizado.")
     else:
         st.warning("Selecione pelo menos um atributo para análise.")
 
