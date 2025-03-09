@@ -102,7 +102,7 @@ user_input = st.text_area("Insira palavras-chave ou uma letra de música:")
 
 if user_input:
     # Contar palavras-chave no input do usuário
-    user_counts = {genre_name: count_keygitords(user_input, genre_keywords) for genre_name, genre_keywords in keywords.items()}
+    user_counts = {genre_name: count_keywords(user_input, genre_keywords) for genre_name, genre_keywords in keywords.items()}
     user_X = pd.DataFrame([list(user_counts.values())], columns=keywords.keys())
 
     # Prever o gênero

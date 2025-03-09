@@ -37,13 +37,62 @@ scaled_data = scaler.fit_transform(df_filtered[acoustic_features])
 # Clusterização
 st.title("🔗 Clusterização de Músicas")
 st.markdown("""
-A análise a seguir utiliza **K-Means** para agrupar músicas com base em seus atributos acústicos.
+Esta aplicação utiliza **K-Means** para agrupar músicas com base em seus atributos acústicos. 
+Abaixo, você pode simular a classificação de uma música em um cluster inserindo os valores dos atributos.
 """)
 
+st.write("### 🎵 Simulação de Previsão de Cluster")
+st.markdown("""
+Insira os valores dos atributos acústicos para simular a classificação da música em um cluster.
+""")
+
+# Inputs para os atributos acústicos
+col1, col2 = st.columns(2)
+with col1:
+    danceability = st.slider("Danceability", 0.0, 1.0, 0.5)
+    energy = st.slider("Energy", 0.0, 1.0, 0.5)
+with col2:
+    acousticness = st.slider("Acousticness", 0.0, 1.0, 0.5)
+    sadness = st.slider("Sadness", 0.0, 1.0, 0.5)
+instrumentalness = st.slider("Instrumentalness", 0.0, 1.0, 0.5)
+
+user_input = pd.DataFrame({
+    'danceability': [danceability],
+    'energy': [energy],
+    'acousticness': [acousticness],
+    'sadness': [sadness],
+    'instrumentalness': [instrumentalness]
+})
+
+user_input_scaled = scaler.transform(user_input)
+
+# Treinar o modelo K-Means com o conjunto de dados completo
+kmeans = KMeans(n_clusters=4, random_state=42)
+kmeans.fit(scaled_data)  
+
+
+predicted_cluster = kmeans.predict(user_input_scaled)
+
+
+st.success(f"### 🎶 A música pertenceria ao **Cluster {predicted_cluster[0]}**")
+st.markdown(f"""
+Com base nos valores inseridos, a música foi classificada no **Cluster {predicted_cluster[0]}**.
+""")
+
+st.write("### 📊 Visualização dos Clusters")
+
+num_clusters = st.slider("Selecione o número de clusters para visualização:", 2, 10, 4)
+df_filtered['cluster'] = kmeans.fit_predict(scaled_data)
+
+st.write("#### Clusterização de Músicas com Base em Danceability e Energy")
 # Método do Cotovelo
 st.write("### Método do Cotovelo")
+st.markdown("""
+O método do cotovelo ajuda a escolher o número ideal de clusters. 
+O ponto onde a inércia começa a diminuir mais lentamente (o "cotovelo") indica o número ideal de clusters.
+""")
 inertia = []
-for k in range(2, 11):
+for k in range(1, 11):
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     kmeans.fit(scaled_data)
     inertia.append(kmeans.inertia_)
