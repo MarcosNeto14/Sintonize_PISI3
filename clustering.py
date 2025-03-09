@@ -79,11 +79,6 @@ st.markdown(f"""
 Com base nos valores inseridos, a música foi classificada no **Cluster {predicted_cluster[0]}**.
 """)
 
-st.write("### 📊 Visualização dos Clusters")
-
-num_clusters = st.slider("Selecione o número de clusters para visualização:", 2, 10, 4)
-df_filtered['cluster'] = kmeans.fit_predict(scaled_data)
-
 st.write("#### Clusterização de Músicas com Base em Danceability e Energy")
 # Método do Cotovelo
 st.write("### Método do Cotovelo")
@@ -92,7 +87,7 @@ O método do cotovelo ajuda a escolher o número ideal de clusters.
 O ponto onde a inércia começa a diminuir mais lentamente (o "cotovelo") indica o número ideal de clusters.
 """)
 inertia = []
-for k in range(1, 11):
+for k in range(2, 11):
     kmeans = KMeans(n_clusters=k, random_state=42, n_init=10)
     kmeans.fit(scaled_data)
     inertia.append(kmeans.inertia_)
@@ -104,6 +99,7 @@ plt.xlabel('Número de Clusters')
 plt.ylabel('Inércia')
 st.pyplot(fig)
 
+st.write("### 📊 Visualização dos Clusters")
 # Definir número de clusters
 num_clusters = st.slider("Selecione o número de clusters:", 2, 10, 4)
 kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
