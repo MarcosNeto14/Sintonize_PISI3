@@ -42,14 +42,41 @@ keywords = {
     "rock": ["guitar", "rock", "band", "concert", "stage", "electric", "drums", "solo", "riff", "headbang", "loud", "rebel", "live"]
 }
 
+# =====================================
+# Seção 1: Filtro de Ritmos Musicais
+# =====================================
+st.write("### 🎵 Filtro de Ritmos Musicais")
+st.markdown("""
+Selecione os ritmos musicais que deseja incluir na análise. Por padrão, todos os ritmos estão selecionados.
+""")
+
+# Lista de todos os ritmos musicais disponíveis
+all_genres = list(keywords.keys())  # Isso retorna: ['blues', 'country', 'pop', 'hip_hop', 'jazz', 'reggae', 'rock']
+
+# Filtro para o usuário escolher os ritmos
+selected_genres = st.multiselect(
+    "Selecione os ritmos musicais:",
+    options=all_genres,  # Todos os ritmos disponíveis
+    default=all_genres[:3],  # Por padrão, seleciona todos os ritmos
+    key="genre_multiselect"  # Adicionando uma chave única
+)
+
+# Verificar se o usuário selecionou pelo menos um ritmo
+if not selected_genres:
+    st.error("Por favor, selecione pelo menos um ritmo musical.")
+    st.stop()
+
+# Filtrar o dataset para incluir apenas os ritmos selecionados
+df_filtered = df[df['genre'].isin(selected_genres)]
+
 # Preparar os dados
-df = df.dropna(subset=['lyrics', 'genre'])
-df['lyrics'] = df['lyrics'].fillna('')
+df_filtered = df_filtered.dropna(subset=['lyrics', 'genre'])
+df_filtered['lyrics'] = df_filtered['lyrics'].fillna('')
 
 X = []
 y = []
 
-for _, row in df.iterrows():
+for _, row in df_filtered.iterrows():
     lyrics = str(row['lyrics'])
     genre = row['genre']
     genre_counts = {genre_name: count_keywords(lyrics, genre_keywords) for genre_name, genre_keywords in keywords.items()}
@@ -63,13 +90,14 @@ y = pd.Series(y)
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
 # =====================================
-# Seção 1: Escolha do Modelo
+# Seção 2: Escolha do Modelo
 # =====================================
 st.write("### 🔧 Escolha do Modelo")
 model_choice = st.selectbox(
     "Selecione o modelo de classificação:",
     ["Random Forest", "SVM", "SVM + SMOTE", "KNN + Undersampling"],
-    help="Escolha um modelo para classificar os gêneros musicais."
+    help="Escolha um modelo para classificar os gêneros musicais.",
+    key="model_choice_selectbox"  # Adicionando uma chave única
 )
 
 # Configurar o modelo selecionado
@@ -90,7 +118,7 @@ elif model_choice == "KNN + Undersampling":
 model.fit(X_train, y_train)
 
 # =====================================
-# Seção 2: Simulação de Classificação
+# Seção 3: Simulação de Classificação
 # =====================================
 st.write("### 🎵 Simulação de Classificação")
 st.markdown("""
@@ -110,7 +138,7 @@ if user_input:
     st.success(f"### 🎶 O gênero previsto é: **{predicted_genre[0]}**")
 
 # =====================================
-# Seção 3: Avaliação do Modelo
+# Seção 4: Avaliação do Modelo
 # =====================================
 st.write("### 📊 Avaliação do Modelo")
 st.markdown("""
@@ -119,9 +147,47 @@ Abaixo estão as métricas de avaliação do modelo selecionado.
 
 # Avaliar o modelo
 y_pred = model.predict(X_test)
-report = classification_report(y_test, y_pred, target_names=keywords.keys(), output_dict=True)
-metrics_df = pd.DataFrame(report).transpose()
+report = classification_report(y_test, y_pred, target_names=selected_genres, output_dict=True)
 
+# Extrair as métricas para cada classe, média e média ponderada
+metrics = {
+    'Precisão': [],
+    'Recall': [],
+    'F1-Score': [],
+    'Suporte': [],
+    'Acurácia': []  # Adicionando Acurácia como uma métrica
+}
+
+# Preencher as métricas para cada classe
+for genre in selected_genres:
+    metrics['Precisão'].append(report[genre]['precision'])
+    metrics['Recall'].append(report[genre]['recall'])
+    metrics['F1-Score'].append(report[genre]['f1-score'])
+    metrics['Suporte'].append(report[genre]['support'])
+    metrics['Acurácia'].append(None)  # Acurácia não é por classe, então deixamos como None
+
+# Adicionar as métricas de média
+metrics['Precisão'].append(report['macro avg']['precision'])
+metrics['Recall'].append(report['macro avg']['recall'])
+metrics['F1-Score'].append(report['macro avg']['f1-score'])
+metrics['Suporte'].append(report['macro avg']['support'])
+metrics['Acurácia'].append(report['accuracy'])  # Acurácia na coluna "Média"
+
+# Adicionar as métricas de média ponderada
+metrics['Precisão'].append(report['weighted avg']['precision'])
+metrics['Recall'].append(report['weighted avg']['recall'])
+metrics['F1-Score'].append(report['weighted avg']['f1-score'])
+metrics['Suporte'].append(None)  # Suporte não tem média ponderada, então deixamos como None
+metrics['Acurácia'].append(None)  # Acurácia não é aplicável à média ponderada
+
+# Criar DataFrame com as métricas
+index = selected_genres + ['Média', 'Média Ponderada']
+metrics_df = pd.DataFrame(metrics, index=index)
+
+# Transpor o DataFrame para que as métricas fiquem nas linhas e as classes nas colunas
+metrics_df = metrics_df.transpose()
+
+# Exibir a tabela
 st.write("Métricas de Avaliação:")
 st.dataframe(metrics_df)
 
@@ -130,4 +196,5 @@ st.markdown("""
 - **Recall**: A proporção de instâncias corretamente classificadas de um gênero.
 - **F1-Score**: A média harmônica entre precision e recall.
 - **Support**: O número de ocorrências de cada gênero no conjunto de teste.
+- **Acurácia**: A proporção de previsões corretas em relação ao total de previsões.
 """)
