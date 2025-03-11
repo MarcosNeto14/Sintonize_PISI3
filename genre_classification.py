@@ -1,5 +1,7 @@
 import streamlit as st
 import pandas as pd
+import shap
+import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
@@ -116,6 +118,49 @@ elif model_choice == "KNN + Undersampling":
 
 # Treinar o modelo
 model.fit(X_train, y_train)
+
+# =====================================
+# Explicabilidade com SHAP
+# =====================================
+st.write("### 🔍 Explicabilidade do Modelo com SHAP")
+
+st.markdown("""
+O SHAP (SHapley Additive exPlanations) é um método baseado na teoria dos valores de Shapley, que vem da teoria dos jogos. 
+Ele permite entender **quais características mais influenciam as previsões do modelo**, mostrando a importância de cada palavra-chave na determinação do gênero musical.
+
+Aqui, usamos o SHAP para visualizar como o modelo Random Forest classifica os gêneros musicais. O gráfico gerado exibe quais palavras-chave têm maior impacto na decisão do modelo.
+""")
+
+# Checkbox para ativar a explicabilidade SHAP
+explain_shap = st.checkbox("Gerar Explicabilidade SHAP (pode ser lento)")
+
+if explain_shap and model_choice == "Random Forest":
+    st.markdown("""
+    O gráfico abaixo mostra a contribuição de cada palavra-chave para a decisão do modelo. 
+    - **Cores**: Representam diferentes classes (gêneros musicais).
+    - **Barras maiores**: Indicam que a característica teve um impacto significativo na previsão do modelo.
+    """)
+
+    # Criando o explicador SHAP para o modelo Random Forest
+    explainer = shap.Explainer(model, X_train)
+    shap_values = explainer(X_test[:50])  # Pegamos apenas 50 amostras para otimizar o tempo de geração
+    
+    # Criando a figura antes de chamar o SHAP
+    fig, ax = plt.subplots(figsize=(10, 5))
+    shap.summary_plot(shap_values, X_test[:50], feature_names=X_test.columns, show=False)
+    
+    # Exibindo o gráfico no Streamlit
+    st.pyplot(fig)
+
+    st.markdown("""
+    🔹 **Interpretação do gráfico**:
+    - Se uma palavra-chave aparece frequentemente no topo, significa que ela influencia fortemente as previsões do modelo.
+    - O tamanho da barra indica a magnitude do impacto da palavra-chave no resultado final.
+    - As cores mostram a contribuição para diferentes classes de gêneros musicais.
+
+    Este tipo de análise ajuda a entender **como** o modelo toma suas decisões e **se ele está aprendendo corretamente os padrões das letras musicais**.
+    """)
+
 
 # =====================================
 # Seção 3: Simulação de Classificação
