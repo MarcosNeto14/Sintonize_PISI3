@@ -91,6 +91,7 @@ y = pd.Series(y)
 # Dividir os dados em treino e teste
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
+
 # =====================================
 # Seção 2: Escolha do Modelo
 # =====================================
@@ -118,6 +119,68 @@ elif model_choice == "KNN + Undersampling":
 
 # Treinar o modelo
 model.fit(X_train, y_train)
+
+# =====================================
+# Seção 3: Avaliação do Modelo
+# =====================================
+st.write("### 📊 Avaliação do Modelo")
+st.markdown("""
+Abaixo estão as métricas de avaliação do modelo selecionado.
+""")
+
+# Avaliar o modelo
+y_pred = model.predict(X_test)
+report = classification_report(y_test, y_pred, target_names=selected_genres, output_dict=True)
+
+# Extrair as métricas para cada classe, média e média ponderada
+metrics = {
+    'Precisão': [],
+    'Recall': [],
+    'F1-Score': [],
+    'Suporte': [],
+    'Acurácia': []  # Adicionando Acurácia como uma métrica
+}
+
+# Preencher as métricas para cada classe
+for genre in selected_genres:
+    metrics['Precisão'].append(report[genre]['precision'])
+    metrics['Recall'].append(report[genre]['recall'])
+    metrics['F1-Score'].append(report[genre]['f1-score'])
+    metrics['Suporte'].append(report[genre]['support'])
+    metrics['Acurácia'].append(None)  # Acurácia não é por classe, então deixamos como None
+
+# Adicionar as métricas de média
+metrics['Precisão'].append(report['macro avg']['precision'])
+metrics['Recall'].append(report['macro avg']['recall'])
+metrics['F1-Score'].append(report['macro avg']['f1-score'])
+metrics['Suporte'].append(report['macro avg']['support'])
+metrics['Acurácia'].append(report['accuracy'])  # Acurácia na coluna "Média"
+
+# Adicionar as métricas de média ponderada
+metrics['Precisão'].append(report['weighted avg']['precision'])
+metrics['Recall'].append(report['weighted avg']['recall'])
+metrics['F1-Score'].append(report['weighted avg']['f1-score'])
+metrics['Suporte'].append(None)  # Suporte não tem média ponderada, então deixamos como None
+metrics['Acurácia'].append(None)  # Acurácia não é aplicável à média ponderada
+
+# Criar DataFrame com as métricas
+index = selected_genres + ['Média', 'Média Ponderada']
+metrics_df = pd.DataFrame(metrics, index=index)
+
+# Transpor o DataFrame para que as métricas fiquem nas linhas e as classes nas colunas
+metrics_df = metrics_df.transpose()
+
+# Exibir a tabela
+st.write("Métricas de Avaliação:")
+st.dataframe(metrics_df)
+
+st.markdown("""
+- **Precision**: A proporção de previsões corretas para um gênero específico.
+- **Recall**: A proporção de instâncias corretamente classificadas de um gênero.
+- **F1-Score**: A média harmônica entre precision e recall.
+- **Support**: O número de ocorrências de cada gênero no conjunto de teste.
+- **Acurácia**: A proporção de previsões corretas em relação ao total de previsões.
+""")
 
 # =====================================
 # Explicabilidade com SHAP
@@ -181,65 +244,3 @@ if user_input:
     # Prever o gênero
     predicted_genre = model.predict(user_X)
     st.success(f"### 🎶 O gênero previsto é: **{predicted_genre[0]}**")
-
-# =====================================
-# Seção 4: Avaliação do Modelo
-# =====================================
-st.write("### 📊 Avaliação do Modelo")
-st.markdown("""
-Abaixo estão as métricas de avaliação do modelo selecionado.
-""")
-
-# Avaliar o modelo
-y_pred = model.predict(X_test)
-report = classification_report(y_test, y_pred, target_names=selected_genres, output_dict=True)
-
-# Extrair as métricas para cada classe, média e média ponderada
-metrics = {
-    'Precisão': [],
-    'Recall': [],
-    'F1-Score': [],
-    'Suporte': [],
-    'Acurácia': []  # Adicionando Acurácia como uma métrica
-}
-
-# Preencher as métricas para cada classe
-for genre in selected_genres:
-    metrics['Precisão'].append(report[genre]['precision'])
-    metrics['Recall'].append(report[genre]['recall'])
-    metrics['F1-Score'].append(report[genre]['f1-score'])
-    metrics['Suporte'].append(report[genre]['support'])
-    metrics['Acurácia'].append(None)  # Acurácia não é por classe, então deixamos como None
-
-# Adicionar as métricas de média
-metrics['Precisão'].append(report['macro avg']['precision'])
-metrics['Recall'].append(report['macro avg']['recall'])
-metrics['F1-Score'].append(report['macro avg']['f1-score'])
-metrics['Suporte'].append(report['macro avg']['support'])
-metrics['Acurácia'].append(report['accuracy'])  # Acurácia na coluna "Média"
-
-# Adicionar as métricas de média ponderada
-metrics['Precisão'].append(report['weighted avg']['precision'])
-metrics['Recall'].append(report['weighted avg']['recall'])
-metrics['F1-Score'].append(report['weighted avg']['f1-score'])
-metrics['Suporte'].append(None)  # Suporte não tem média ponderada, então deixamos como None
-metrics['Acurácia'].append(None)  # Acurácia não é aplicável à média ponderada
-
-# Criar DataFrame com as métricas
-index = selected_genres + ['Média', 'Média Ponderada']
-metrics_df = pd.DataFrame(metrics, index=index)
-
-# Transpor o DataFrame para que as métricas fiquem nas linhas e as classes nas colunas
-metrics_df = metrics_df.transpose()
-
-# Exibir a tabela
-st.write("Métricas de Avaliação:")
-st.dataframe(metrics_df)
-
-st.markdown("""
-- **Precision**: A proporção de previsões corretas para um gênero específico.
-- **Recall**: A proporção de instâncias corretamente classificadas de um gênero.
-- **F1-Score**: A média harmônica entre precision e recall.
-- **Support**: O número de ocorrências de cada gênero no conjunto de teste.
-- **Acurácia**: A proporção de previsões corretas em relação ao total de previsões.
-""")
