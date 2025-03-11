@@ -138,15 +138,6 @@ plt.ylabel("Energy")
 plt.title(f"Clusters de Músicas por Danceability e Energy ({num_clusters} clusters)")
 st.pyplot(fig)
 
-# Interpretação dos Clusters
-st.write("#### Interpretação dos Clusters")
-st.markdown("""
-- **Cluster 1**: Músicas com alta energia e baixa dançabilidade (ex.: rock dos anos 1970).
-- **Cluster 2**: Músicas com alta dançabilidade e energia moderada (ex.: pop dos anos 1980).
-- **Cluster 3**: Músicas acústicas e melancólicas (ex.: folk dos anos 1960).
-- **Cluster 4**: Músicas com baixa energia e alta dançabilidade (ex.: jazz suave).
-""")
-
 # Explicação da Importância da Análise
 st.markdown("""
 ### 📊 Importância da Análise de Silhueta
