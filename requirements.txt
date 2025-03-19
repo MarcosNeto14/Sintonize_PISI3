@@ -4,3 +4,4 @@ matplotlib
 shap
 pandas
 scikit-learn
+seaborn 
