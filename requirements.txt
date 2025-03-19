@@ -1,3 +1,6 @@
 streamlit
 imblearn
+matplotlib
 shap
+pandas
+scikit-learn
