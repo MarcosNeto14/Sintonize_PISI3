@@ -44,32 +44,8 @@ keywords = {
     "rock": ["guitar", "rock", "band", "concert", "stage", "electric", "drums", "solo", "riff", "headbang", "loud", "rebel", "live"]
 }
 
-# =====================================
-# Seção 1: Filtro de Ritmos Musicais
-# =====================================
-st.write("### 🎵 Filtro de Ritmos Musicais")
-st.markdown("""
-Selecione os ritmos musicais que deseja incluir na análise. Por padrão, todos os ritmos estão selecionados.
-""")
-
-# Lista de todos os ritmos musicais disponíveis
-all_genres = list(keywords.keys())  # Isso retorna: ['blues', 'country', 'pop', 'hip_hop', 'jazz', 'reggae', 'rock']
-
-# Filtro para o usuário escolher os ritmos
-selected_genres = st.multiselect(
-    "Selecione os ritmos musicais:",
-    options=all_genres,  # Todos os ritmos disponíveis
-    default=all_genres[:3],  # Por padrão, seleciona todos os ritmos
-    key="genre_multiselect"  # Adicionando uma chave única
-)
-
-# Verificar se o usuário selecionou pelo menos um ritmo
-if not selected_genres:
-    st.error("Por favor, selecione pelo menos um ritmo musical.")
-    st.stop()
-
-# Filtrar o dataset para incluir apenas os ritmos selecionados
-df_filtered = df[df['genre'].isin(selected_genres)]
+# Usar o dataset completo, sem filtrar por gênero
+df_filtered = df  # Remova o filtro por gênero
 
 # Preparar os dados
 df_filtered = df_filtered.dropna(subset=['lyrics', 'genre'])
@@ -88,9 +64,32 @@ for _, row in df_filtered.iterrows():
 X = pd.DataFrame(X, columns=keywords.keys())
 y = pd.Series(y)
 
+# Visualizar a distribuição das classes antes do balanceamento
+st.write("### 📊 Distribuição das Classes Antes do Balanceamento")
+class_distribution_before = y.value_counts()
+plt.figure(figsize=(10, 6))
+class_distribution_before.plot(kind='barh', color='skyblue')  # Gráfico horizontal
+plt.xlabel("Número de Exemplos")
+plt.ylabel("Gênero Musical")
+plt.title("Distribuição das Classes Antes do Balanceamento")
+st.pyplot(plt)
+
 # Dividir os dados em treino e teste
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
 
+# Aplicar SMOTE para balancear as classes no conjunto de treinamento
+smote = SMOTE(random_state=42)
+X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+
+# Visualizar a distribuição das classes após o balanceamento
+st.write("### 📊 Distribuição das Classes Após o Balanceamento (SMOTE)")
+class_distribution_after = pd.Series(y_train_resampled).value_counts()
+plt.figure(figsize=(10, 6))
+class_distribution_after.plot(kind='barh', color='lightgreen')  # Gráfico horizontal
+plt.xlabel("Número de Exemplos")
+plt.ylabel("Gênero Musical")
+plt.title("Distribuição das Classes Após o Balanceamento")
+st.pyplot(plt)
 
 # =====================================
 # Seção 2: Escolha do Modelo
@@ -107,18 +106,16 @@ model_choice = st.selectbox(
 if model_choice == "Random Forest":
     model = RandomForestClassifier(n_estimators=100, random_state=42)
 elif model_choice == "SVM":
-    model = SVC(kernel='linear', random_state=42)
+    model = SVC(kernel='linear', random_state=42, probability=True)
 elif model_choice == "SVM + SMOTE":
-    smote = SMOTE(random_state=42)
-    X_train, y_train = smote.fit_resample(X_train, y_train)
-    model = SVC(kernel='linear', random_state=42)
+    model = SVC(kernel='linear', random_state=42, probability=True)
 elif model_choice == "KNN + Undersampling":
     undersampler = RandomUnderSampler(random_state=42)
-    X_train, y_train = undersampler.fit_resample(X_train, y_train)
+    X_train_resampled, y_train_resampled = undersampler.fit_resample(X_train, y_train)
     model = KNeighborsClassifier(n_neighbors=5)
 
-# Treinar o modelo
-model.fit(X_train, y_train)
+# Treinar o modelo com os dados balanceados
+model.fit(X_train_resampled, y_train_resampled)
 
 # =====================================
 # Seção 3: Avaliação do Modelo
@@ -130,7 +127,12 @@ Abaixo estão as métricas de avaliação do modelo selecionado.
 
 # Avaliar o modelo
 y_pred = model.predict(X_test)
-report = classification_report(y_test, y_pred, target_names=selected_genres, output_dict=True)
+
+# Verifique os gêneros presentes em y_test
+present_genres = y_test.unique()
+
+# Gere o relatório de classificação apenas com os gêneros presentes
+report = classification_report(y_test, y_pred, target_names=present_genres, output_dict=True)
 
 # Extrair as métricas para cada classe, média e média ponderada
 metrics = {
@@ -141,8 +143,8 @@ metrics = {
     'Acurácia': []  # Adicionando Acurácia como uma métrica
 }
 
-# Preencher as métricas para cada classe
-for genre in selected_genres:
+# Preencher as métricas para cada classe presente
+for genre in present_genres:
     metrics['Precisão'].append(report[genre]['precision'])
     metrics['Recall'].append(report[genre]['recall'])
     metrics['F1-Score'].append(report[genre]['f1-score'])
@@ -164,7 +166,7 @@ metrics['Suporte'].append(None)  # Suporte não tem média ponderada, então dei
 metrics['Acurácia'].append(None)  # Acurácia não é aplicável à média ponderada
 
 # Criar DataFrame com as métricas
-index = selected_genres + ['Média', 'Média Ponderada']
+index = list(present_genres) + ['Média', 'Média Ponderada']
 metrics_df = pd.DataFrame(metrics, index=index)
 
 # Transpor o DataFrame para que as métricas fiquem nas linhas e as classes nas colunas
@@ -205,7 +207,7 @@ if explain_shap and model_choice == "Random Forest":
     """)
 
     # Criando o explicador SHAP para o modelo Random Forest
-    explainer = shap.Explainer(model, X_train)
+    explainer = shap.Explainer(model, X_train_resampled)
     shap_values = explainer(X_test[:50])  # Pegamos apenas 50 amostras para otimizar o tempo de geração
     
     # Criando a figura antes de chamar o SHAP
@@ -237,10 +239,38 @@ Insira palavras-chave ou uma letra de música para classificar o gênero.
 user_input = st.text_area("Insira palavras-chave ou uma letra de música:")
 
 if user_input:
-    # Contar palavras-chave no input do usuário
     user_counts = {genre_name: count_keywords(user_input, genre_keywords) for genre_name, genre_keywords in keywords.items()}
     user_X = pd.DataFrame([list(user_counts.values())], columns=keywords.keys())
 
-    # Prever o gênero
+    # Prever o gênero e as probabilidades
     predicted_genre = model.predict(user_X)
+    predicted_proba = model.predict_proba(user_X)
+
     st.success(f"### 🎶 O gênero previsto é: **{predicted_genre[0]}**")
+    
+    # Exibir probabilidades
+    st.write("### Probabilidades por Gênero:")
+    proba_df = pd.DataFrame(predicted_proba, columns=model.classes_)
+    st.dataframe(proba_df)
+
+    # Gráfico de barras das probabilidades
+    st.write("### 📊 Probabilidades por Gênero (Gráfico)")
+    plt.figure(figsize=(10, 6))
+    proba_df.T.plot(kind='barh', legend=False)  # Gráfico horizontal
+    plt.xlabel("Probabilidade")
+    plt.ylabel("Gênero Musical")
+    plt.title("Probabilidades de Classificação por Gênero")
+    st.pyplot(plt)
+
+class_distribution = df["genre"].value_counts()
+print("Distribuição das Classes:")
+print(class_distribution)
+
+# Crie um gráfico de barras para visualizar a distribuição
+plt.figure(figsize=(10, 6))
+plt.bar(class_distribution.index, class_distribution.values, color='skyblue')
+plt.xlabel("Gênero Musical")
+plt.ylabel("Número de Exemplos")
+plt.title("Distribuição das Classes no Conjunto de Treinamento")
+plt.xticks(rotation=45)  # Rotaciona os rótulos do eixo X para melhor visualização
+plt.show()
