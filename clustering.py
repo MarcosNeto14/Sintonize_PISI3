@@ -41,6 +41,24 @@ Esta aplicação utiliza **K-Means** para agrupar músicas com base em seus atri
 Abaixo, você pode simular a classificação de uma música em um cluster inserindo os valores dos atributos.
 """)
 
+# Visualização dos dados antes e depois da normalização
+st.write("### Visualização da Normalização dos Dados")
+
+# Gráfico antes da normalização
+st.write("#### Distribuição dos Dados Antes da Normalização")
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.boxplot(data=df_filtered[acoustic_features], ax=ax)
+plt.title("Distribuição dos Atributos Acústicos Antes da Normalização")
+st.pyplot(fig)
+
+# Gráfico depois da normalização
+st.write("#### Distribuição dos Dados Após a Normalização")
+scaled_df = pd.DataFrame(scaled_data, columns=acoustic_features)
+fig, ax = plt.subplots(figsize=(10, 6))
+sns.boxplot(data=scaled_df, ax=ax)
+plt.title("Distribuição dos Atributos Acústicos Após a Normalização")
+st.pyplot(fig)
+
 st.write("### 🎵 Simulação de Previsão de Cluster")
 st.markdown("""
 Insira os valores dos atributos acústicos para simular a classificação da música em um cluster.
