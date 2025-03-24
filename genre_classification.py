@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import shap
+import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
@@ -14,7 +15,7 @@ from utils import load_data, count_keywords
 # Caminho do dataset
 parquet_path = "dataset/parquet/tcc_ceds_music.parquet"
 df = load_data(parquet_path)
-if df is None:
+if df is None:  
     st.stop()
 
 if 'year' not in df.columns:
@@ -96,7 +97,7 @@ st.pyplot(plt)
 # =====================================
 st.write("### 🔧 Escolha do Modelo")
 model_choice = st.selectbox(
-    "Selecione o modelo de classificação:",
+    "Selecione o modelo de classificação (caso queira analisar com o método SHAP escolha Random Forest):",
     ["Random Forest", "SVM", "SVM + SMOTE", "KNN + Undersampling"],
     help="Escolha um modelo para classificar os gêneros musicais.",
     key="model_choice_selectbox"  # Adicionando uma chave única
@@ -184,47 +185,8 @@ st.markdown("""
 - **Acurácia**: A proporção de previsões corretas em relação ao total de previsões.
 """)
 
-# =====================================
-# Explicabilidade com SHAP
-# =====================================
-st.write("### 🔍 Explicabilidade do Modelo com SHAP")
 
-st.markdown("""
-O SHAP (SHapley Additive exPlanations) é um método baseado na teoria dos valores de Shapley, que vem da teoria dos jogos. 
-Ele permite entender **quais características mais influenciam as previsões do modelo**, mostrando a importância de cada palavra-chave na determinação do gênero musical.
 
-Aqui, usamos o SHAP para visualizar como o modelo Random Forest classifica os gêneros musicais. O gráfico gerado exibe quais palavras-chave têm maior impacto na decisão do modelo.
-""")
-
-# Checkbox para ativar a explicabilidade SHAP
-explain_shap = st.checkbox("Gerar Explicabilidade SHAP (pode ser lento)")
-
-if explain_shap and model_choice == "Random Forest":
-    st.markdown("""
-    O gráfico abaixo mostra a contribuição de cada palavra-chave para a decisão do modelo. 
-    - **Cores**: Representam diferentes classes (gêneros musicais).
-    - **Barras maiores**: Indicam que a característica teve um impacto significativo na previsão do modelo.
-    """)
-
-    # Criando o explicador SHAP para o modelo Random Forest
-    explainer = shap.Explainer(model, X_train_resampled)
-    shap_values = explainer(X_test[:50])  # Pegamos apenas 50 amostras para otimizar o tempo de geração
-    
-    # Criando a figura antes de chamar o SHAP
-    fig, ax = plt.subplots(figsize=(10, 5))
-    shap.summary_plot(shap_values, X_test[:50], feature_names=X_test.columns, show=False)
-    
-    # Exibindo o gráfico no Streamlit
-    st.pyplot(fig)
-
-    st.markdown("""
-    🔹 **Interpretação do gráfico**:
-    - Se uma palavra-chave aparece frequentemente no topo, significa que ela influencia fortemente as previsões do modelo.
-    - O tamanho da barra indica a magnitude do impacto da palavra-chave no resultado final.
-    - As cores mostram a contribuição para diferentes classes de gêneros musicais.
-
-    Este tipo de análise ajuda a entender **como** o modelo toma suas decisões e **se ele está aprendendo corretamente os padrões das letras musicais**.
-    """)
 
 
 # =====================================
@@ -236,7 +198,7 @@ Insira palavras-chave ou uma letra de música para classificar o gênero.
 """)
 
 # Input do usuário
-user_input = st.text_area("Insira palavras-chave ou uma letra de música:")
+user_input = st.text_area("Insira palavras-chave ou uma letra de música (separadas por espaço ou vírgula):")
 
 if user_input:
     user_counts = {genre_name: count_keywords(user_input, genre_keywords) for genre_name, genre_keywords in keywords.items()}
@@ -261,6 +223,106 @@ if user_input:
     plt.ylabel("Gênero Musical")
     plt.title("Probabilidades de Classificação por Gênero")
     st.pyplot(plt)
+    # =====================================
+    # Explicabilidade com SHAP
+    # =====================================
+    # Ativando o SHAP apenas para Random Forest
+    if model_choice == "Random Forest":
+        st.write("### 🧠 Explicação da decisão do modelo (SHAP)")
+        explain_user_shap = st.checkbox("Mostrar explicação SHAP para essa previsão")
+
+        if explain_user_shap:
+            with st.spinner("Calculando explicação SHAP..."):
+                explainer = shap.Explainer(model, X_train_resampled)
+                shap_values = explainer(user_X)
+                predicted_index = np.argmax(predicted_proba)
+
+                # Reconstruir explicação individual da classe prevista
+                user_shap = shap.Explanation(
+                    values=shap_values.values[0][predicted_index],
+                    base_values=shap_values.base_values[0][predicted_index],
+                    data=user_X.values[0],
+                    feature_names=user_X.columns.tolist()
+                )
+
+                fig, ax = plt.subplots(figsize=(10, 5))
+                shap.plots.waterfall(user_shap, show=False)
+                st.pyplot(fig)
+
+            st.markdown("""
+                #### ✨ Sobre a explicabilidade com SHAP
+
+                O gráfico abaixo utiliza o método **SHAP (SHapley Additive exPlanations)**, baseado na teoria dos jogos, para explicar como o modelo chegou à decisão de gênero para a letra fornecida.
+
+                O **SHAP calcula o impacto de cada característica (nesse caso, palavras-chave)** na previsão feita pelo modelo. Ele mostra quais palavras **empurraram** o modelo para escolher aquele gênero e quais tentaram puxar para outro.
+
+                #### 🧠 Como interpretar o gráfico:
+
+                - A **barra azul** representa a base média de decisão do modelo (o "ponto neutro").
+                - As **setas vermelhas** indicam palavras que contribuíram positivamente para o gênero previsto.
+                - As **setas azuis** mostram palavras que puxaram contra esse gênero.
+                - Quanto mais **no topo**, mais importante foi a palavra na decisão final.
+                - O **tamanho da barra** indica o peso que a palavra teve no resultado.
+
+                > Isso permite entender o comportamento do modelo de forma transparente, e também ajuda a verificar se ele está aprendendo padrões coerentes das letras musicais.
+                """)
+            
+            st.markdown("#### 📈 Importância Global das Palavras-chave")
+            st.markdown("Cada barra representa o impacto da contagem de palavras-chaves relacionadas ao gênero selecionado na predição final.")
+
+            with st.spinner("Gerando gráfico geral de importância das features..."):
+                # Escolhe um subconjunto dos dados de teste
+                X_sample = X_test[:100]
+
+                # Cria o explicador
+                explainer = shap.Explainer(model, X_train_resampled)
+                shap_values_sample = explainer(X_sample)
+
+                # Se o modelo for multi-classe, vamos pegar a classe 0 (ou qualquer uma)
+                if hasattr(shap_values_sample, "values") and len(shap_values_sample.values.shape) == 3:
+                    # Garante que estamos pegando a estrutura Explanation certa
+                    shap_values_bar = shap.Explanation(
+                        values=shap_values_sample.values[:, 0],
+                        base_values=shap_values_sample.base_values[:, 0],
+                        data=X_sample.values,
+                        feature_names=X_sample.columns.tolist()
+                    )
+                else:
+                    shap_values_bar = shap_values_sample
+
+                # Exibir gráfico
+                fig_bar, ax = plt.subplots(figsize=(10, 6))
+                shap.plots.bar(shap_values_bar, show=False)
+                st.pyplot(fig_bar)
+                
+            st.markdown("""
+            #### 🧠 O que o gráfico de barras SHAP está mostrando?
+
+            Esse gráfico apresenta uma visão **global** da importância das palavras-chave (features) utilizadas pelo modelo de classificação.
+
+            Em vez de explicar **uma única previsão** como o gráfico anterior (waterfall), aqui o SHAP analisa um conjunto de exemplos (várias músicas) e calcula, em média, **quais palavras mais influenciam as decisões do modelo**.
+
+            ##### ✨ Como interpretar:
+
+            - Cada barra representa uma **palavra-chave** (feature).
+            - O comprimento da barra indica **a força média do impacto** dessa palavra nas decisões do modelo.
+            - Quanto maior a barra, mais aquela palavra influenciou as classificações em geral.
+            - Esse gráfico é útil para entender **o que o modelo realmente está aprendendo** e valorizando nas letras das músicas.
+
+            > Exemplo: Se a palavra "love" tiver uma barra longa, quer dizer que ela aparece com frequência nas letras rotuladas como "pop", e o modelo aprendeu isso direitinho.
+
+            Essa explicação ajuda a garantir que o modelo esteja tomando decisões coerentes com o esperado e pode ser usada até como **instrumento de análise de padrões culturais** ao longo do tempo.
+            """)
+
+
+            
+
+
+
+
+            
+
+
 
 class_distribution = df["genre"].value_counts()
 print("Distribuição das Classes:")
